@@ -160,6 +160,25 @@ class UrbanKey_Meta_Boxes {
                 <td><input type="text" id="_longitude" name="_longitude" value="<?php echo esc_attr( $get('_longitude') ); ?>"></td>
             </tr>
 
+            <tr><th colspan="2" class="uk-meta-section">Agent</th></tr>
+            <tr>
+                <th><label for="_agent_id">Assigned Agent</label></th>
+                <td>
+                    <?php
+                    $current_agent = (int) $get('_agent_id', 0);
+                    $agents = get_posts( array( 'post_type' => 'uk_agent', 'post_status' => 'publish', 'numberposts' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );
+                    ?>
+                    <select id="_agent_id" name="_agent_id">
+                        <option value="0"><?php esc_html_e( '— No Agent —', 'urbankey' ); ?></option>
+                        <?php foreach ( $agents as $agent ) : ?>
+                            <option value="<?php echo esc_attr( $agent->ID ); ?>" <?php selected( $current_agent, $agent->ID ); ?>>
+                                <?php echo esc_html( get_the_title( $agent ) ); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </td>
+            </tr>
+
             <tr><th colspan="2" class="uk-meta-section">Media</th></tr>
             <tr>
                 <th><label for="_video_url">Video URL</label></th>
@@ -184,6 +203,10 @@ class UrbanKey_Meta_Boxes {
             if ( isset( $_POST[ $field ] ) ) {
                 update_post_meta( $post_id, $field, sanitize_text_field( $_POST[ $field ] ) );
             }
+        }
+
+        if ( isset( $_POST['_agent_id'] ) ) {
+            update_post_meta( $post_id, '_agent_id', absint( $_POST['_agent_id'] ) );
         }
 
         $number_fields = array( '_price', '_bedrooms', '_bathrooms', '_area', '_floors', '_year_built' );

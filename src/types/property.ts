@@ -37,6 +37,17 @@ export interface FloorPlan {
   image: ImageData
 }
 
+export interface AgentSummary {
+  id: number
+  slug: string
+  name: string
+  email: string
+  phone: string
+  whatsapp: string
+  avatar: string | null
+  yearsExperience: number
+}
+
 export interface Property {
   id: number
   slug: string
@@ -60,6 +71,7 @@ export interface Property {
   videoUrl?: string
   virtualTourUrl?: string
   agentId?: number
+  agent?: AgentSummary
   projectId?: number
   featured: boolean
   createdAt: string

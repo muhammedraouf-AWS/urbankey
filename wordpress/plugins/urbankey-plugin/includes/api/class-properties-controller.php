@@ -179,6 +179,30 @@ class UrbanKey_Properties_Controller extends WP_REST_Controller {
             }
         }
 
+        $agent_id = (int) $get( '_agent_id', 0 );
+        $agent    = null;
+        if ( $agent_id > 0 ) {
+            $agent_post = get_post( $agent_id );
+            if ( $agent_post && 'publish' === $agent_post->post_status ) {
+                $am  = get_post_meta( $agent_id );
+                $ag  = function ( $key, $default = null ) use ( $am ) {
+                    return isset( $am[ $key ][0] ) ? $am[ $key ][0] : $default;
+                };
+                $av_id  = get_post_thumbnail_id( $agent_id );
+                $av_src = $av_id ? wp_get_attachment_image_src( $av_id, 'medium' ) : null;
+                $agent  = [
+                    'id'              => $agent_id,
+                    'slug'            => $agent_post->post_name,
+                    'name'            => get_the_title( $agent_post ),
+                    'email'           => $ag( '_email', '' ),
+                    'phone'           => $ag( '_phone', '' ),
+                    'whatsapp'        => $ag( '_whatsapp', '' ),
+                    'avatar'          => $av_src ? $av_src[0] : null,
+                    'yearsExperience' => (int) $ag( '_years_experience', 0 ),
+                ];
+            }
+        }
+
         return [
             'id'          => $post->ID,
             'slug'        => $post->post_name,
@@ -209,6 +233,8 @@ class UrbanKey_Properties_Controller extends WP_REST_Controller {
             'images'      => $images,
             'amenities'   => $amenities,
             'featured'    => (bool) $get( '_featured', false ),
+            'agentId'     => $agent_id ?: null,
+            'agent'       => $agent,
             'createdAt'   => get_the_date( 'c', $post ),
             'updatedAt'   => get_the_modified_date( 'c', $post ),
         ];
