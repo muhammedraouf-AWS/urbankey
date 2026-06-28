@@ -48,3 +48,4 @@ project-context/
 
 # WordPress vendor dependencies
 wordpress/vendor/
+.vscode
