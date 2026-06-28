@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "**.hostingersite.com",
+      },
+      {
+        protocol: "https",
         hostname: "**.wordpress.com",
       },
       {

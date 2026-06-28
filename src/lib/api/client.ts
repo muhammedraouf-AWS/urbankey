@@ -7,6 +7,7 @@ interface FetchOptions extends RequestInit {
   params?: RequestParams
   token?: string
   revalidate?: number | false
+  tags?: string[]
 }
 
 function buildUrl(path: string, params?: RequestParams): string {
@@ -37,12 +38,15 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
 export const apiClient = {
   async get<T>(path: string, options: FetchOptions = {}): Promise<T> {
-    const { params, token, revalidate, ...init } = options
+    const { params, token, revalidate, tags, ...init } = options
     try {
       const response = await fetch(buildUrl(path, params), {
         method: "GET",
         headers: { "Content-Type": "application/json", ...authHeaders(token), ...init.headers },
-        next: revalidate !== undefined ? { revalidate } : { revalidate: 60 },
+        next: {
+          revalidate: revalidate !== undefined ? revalidate : 60,
+          ...(tags ? { tags } : {}),
+        },
         ...init,
       })
       return handleResponse<T>(response)

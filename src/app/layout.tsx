@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Inter, Playfair_Display, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/shared/Providers"
+import { Header } from "@/components/layout/header/Header"
 import { siteConfig } from "@/config/site"
 
 const inter = Inter({
@@ -63,7 +64,10 @@ export default function RootLayout({ children }: RootLayoutProps) {
       className={`${inter.variable} ${playfair.variable} ${geistMono.variable} h-full`}
     >
       <body className="min-h-full bg-background text-foreground antialiased">
-        <Providers>{children}</Providers>
+        <Providers>
+          <Header />
+          {children}
+        </Providers>
       </body>
     </html>
   )
