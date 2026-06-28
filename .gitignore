@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# VS Code SFTP — contains server credentials, never commit
+.vscode/sftp.json
+
+# Internal project documentation — not part of the deployable codebase
+project-context/
+
+# WordPress vendor dependencies
+wordpress/vendor/
