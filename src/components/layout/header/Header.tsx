@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { SearchBar } from "@/features/search/components/SearchBar"
 
 export function Header() {
   return (
@@ -30,6 +31,7 @@ export function Header() {
           >
             Rent
           </Link>
+          <SearchBar />
         </nav>
       </div>
     </header>
