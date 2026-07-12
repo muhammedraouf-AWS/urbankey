@@ -93,6 +93,65 @@ class UrbanKey_Properties_Controller extends WP_REST_Controller {
             ];
         }
 
+        $max_beds = $request->get_param( 'max_beds' );
+        if ( $max_beds ) {
+            $args['meta_query'][] = [
+                'key'     => '_bedrooms',
+                'value'   => (int) $max_beds,
+                'compare' => '<=',
+                'type'    => 'NUMERIC',
+            ];
+        }
+
+        $min_baths = $request->get_param( 'min_baths' );
+        if ( $min_baths ) {
+            $args['meta_query'][] = [
+                'key'     => '_bathrooms',
+                'value'   => (float) $min_baths,
+                'compare' => '>=',
+                'type'    => 'NUMERIC',
+            ];
+        }
+
+        $min_area = $request->get_param( 'min_area' );
+        $max_area = $request->get_param( 'max_area' );
+        if ( $min_area || $max_area ) {
+            $area_query = [ 'key' => '_area', 'type' => 'NUMERIC' ];
+            if ( $min_area && $max_area ) {
+                $area_query['value']   = [ (float) $min_area, (float) $max_area ];
+                $area_query['compare'] = 'BETWEEN';
+            } elseif ( $min_area ) {
+                $area_query['value']   = (float) $min_area;
+                $area_query['compare'] = '>=';
+            } else {
+                $area_query['value']   = (float) $max_area;
+                $area_query['compare'] = '<=';
+            }
+            $args['meta_query'][] = $area_query;
+        }
+
+        $city = $request->get_param( 'city' );
+        if ( $city ) {
+            $args['meta_query'][] = [
+                'key'     => '_city',
+                'value'   => sanitize_text_field( $city ),
+                'compare' => 'LIKE',
+            ];
+        }
+
+        $amenities_param = $request->get_param( 'amenities' );
+        if ( $amenities_param ) {
+            $amenity_slugs = array_filter( array_map( 'sanitize_text_field', explode( ',', $amenities_param ) ) );
+            if ( ! empty( $amenity_slugs ) ) {
+                $args['tax_query'][] = [
+                    'taxonomy' => 'amenity',
+                    'field'    => 'slug',
+                    'terms'    => $amenity_slugs,
+                    'operator' => 'AND',
+                ];
+            }
+        }
+
         $type = $request->get_param( 'type' );
         if ( $type ) {
             $args['tax_query'][] = [
@@ -107,6 +166,9 @@ class UrbanKey_Properties_Controller extends WP_REST_Controller {
 
         if ( 'price' === $orderby ) {
             $args['meta_key'] = '_price';
+            $args['orderby']  = 'meta_value_num';
+        } elseif ( 'area' === $orderby ) {
+            $args['meta_key'] = '_area';
             $args['orderby']  = 'meta_value_num';
         } else {
             $args['orderby'] = 'date';
@@ -251,8 +313,14 @@ class UrbanKey_Properties_Controller extends WP_REST_Controller {
             'min_price'    => [ 'type' => 'number' ],
             'max_price'    => [ 'type' => 'number' ],
             'min_beds'     => [ 'type' => 'integer' ],
+            'max_beds'     => [ 'type' => 'integer' ],
+            'min_baths'    => [ 'type' => 'number' ],
+            'min_area'     => [ 'type' => 'number' ],
+            'max_area'     => [ 'type' => 'number' ],
+            'city'         => [ 'type' => 'string' ],
+            'amenities'    => [ 'type' => 'string' ],
             'featured'     => [ 'type' => 'boolean' ],
-            'orderby'      => [ 'type' => 'string', 'enum' => [ 'date', 'price' ], 'default' => 'date' ],
+            'orderby'      => [ 'type' => 'string', 'enum' => [ 'date', 'price', 'area' ], 'default' => 'date' ],
             'order'        => [ 'type' => 'string', 'enum' => [ 'asc', 'desc' ], 'default' => 'desc' ],
         ];
     }
