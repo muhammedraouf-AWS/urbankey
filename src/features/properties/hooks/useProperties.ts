@@ -5,6 +5,7 @@ import { apiClient } from "@/lib/api/client"
 import { endpoints } from "@/config/api"
 import { fetchPropertiesByIds } from "@/features/properties/services"
 import { useFavoritesStore } from "@/stores/favorites.store"
+import { useRecentlyViewedStore } from "@/stores/recently-viewed.store"
 import type { Property, PropertyFilters } from "@/types/property"
 import type { PaginatedResponse } from "@/types/common"
 
@@ -32,6 +33,17 @@ export function useFavoriteProperties() {
     queryKey: ["properties", "favorites", favoriteIds],
     queryFn: () => fetchPropertiesByIds(favoriteIds),
     enabled: favoriteIds.length > 0,
+    staleTime: 60_000,
+    placeholderData: (prev) => prev,
+  })
+}
+
+export function useRecentlyViewedProperties() {
+  const propertyIds = useRecentlyViewedStore((s) => s.propertyIds)
+  return useQuery({
+    queryKey: ["properties", "recently-viewed", propertyIds],
+    queryFn: () => fetchPropertiesByIds(propertyIds),
+    enabled: propertyIds.length > 0,
     staleTime: 60_000,
     placeholderData: (prev) => prev,
   })

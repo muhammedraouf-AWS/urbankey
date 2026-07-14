@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Heart } from "lucide-react"
 import { useFavoritesStore } from "@/stores/favorites.store"
 import { cn } from "@/lib/utils"
@@ -9,8 +10,13 @@ interface FavoriteButtonProps {
 }
 
 export function FavoriteButton({ propertyId }: FavoriteButtonProps) {
-  const isFavorite = useFavoritesStore((s) => s.isFavorite(propertyId))
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
+  const isFavorite     = useFavoritesStore((s) => s.isFavorite(propertyId))
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite)
+
+  const active = mounted && isFavorite
 
   return (
     <button
@@ -18,15 +24,15 @@ export function FavoriteButton({ propertyId }: FavoriteButtonProps) {
         e.preventDefault()
         toggleFavorite(propertyId)
       }}
-      aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+      aria-label={active ? "Remove from favorites" : "Add to favorites"}
       className={cn(
         "flex size-9 items-center justify-center rounded-full backdrop-blur-sm transition-colors",
-        isFavorite
-          ? "bg-[var(--gold)] text-[var(--navy)]"
-          : "bg-black/30 text-white hover:bg-[var(--gold)] hover:text-[var(--navy)]"
+        active
+          ? "bg-gold text-navy"
+          : "bg-black/30 text-white hover:bg-gold hover:text-navy"
       )}
     >
-      <Heart className={cn("size-4", isFavorite && "fill-current")} />
+      <Heart className={cn("size-4", active && "fill-current")} />
     </button>
   )
 }

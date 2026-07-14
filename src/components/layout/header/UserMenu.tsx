@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { User, Heart, LogOut, ChevronDown } from "lucide-react"
+import { Heart, Settings, LogOut, ChevronDown } from "lucide-react"
 import { useAuthStore } from "@/stores/auth.store"
 
 export function UserMenu() {
@@ -73,7 +73,7 @@ export function UserMenu() {
             className="size-8 rounded-full object-cover"
           />
         ) : (
-          <span className="flex size-8 items-center justify-center rounded-full bg-[var(--navy)] text-xs font-semibold text-white">
+          <span className="flex size-8 items-center justify-center rounded-full bg-navy text-xs font-semibold text-white">
             {initials}
           </span>
         )}
@@ -99,6 +99,14 @@ export function UserMenu() {
             >
               <Heart className="size-4 text-muted-foreground" />
               Saved Properties
+            </Link>
+            <Link
+              href="/dashboard/settings"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted"
+            >
+              <Settings className="size-4 text-muted-foreground" />
+              Account Settings
             </Link>
           </div>
 

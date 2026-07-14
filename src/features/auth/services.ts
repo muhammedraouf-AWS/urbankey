@@ -60,12 +60,7 @@ export async function register(data: RegisterData): Promise<void> {
   })
 }
 
-export async function getMe(token: string): Promise<User> {
-  const data = await wpFetch<WpUserMe>(
-    buildApiUrl(endpoints.auth.me) + "?context=edit",
-    { headers: { Authorization: `Bearer ${token}` } }
-  )
-
+function mapWpUser(data: WpUserMe): User {
   return {
     id:          data.id,
     email:       data.email,
@@ -76,4 +71,36 @@ export async function getMe(token: string): Promise<User> {
     role:        (data.roles?.[0] ?? "subscriber") as User["role"],
     createdAt:   data.registered_date ?? "",
   }
+}
+
+export async function getMe(token: string): Promise<User> {
+  const data = await wpFetch<WpUserMe>(
+    buildApiUrl(endpoints.auth.me) + "?context=edit",
+    { headers: { Authorization: `Bearer ${token}` } }
+  )
+  return mapWpUser(data)
+}
+
+export async function updateProfile(
+  token: string,
+  payload: { firstName: string; lastName: string; displayName: string }
+): Promise<User> {
+  const data = await wpFetch<WpUserMe>(buildApiUrl(endpoints.auth.me), {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      first_name: payload.firstName,
+      last_name:  payload.lastName,
+      name:       payload.displayName,
+    }),
+  })
+  return mapWpUser(data)
+}
+
+export async function updatePassword(token: string, newPassword: string): Promise<void> {
+  await wpFetch<unknown>(buildApiUrl(endpoints.auth.me), {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ password: newPassword }),
+  })
 }

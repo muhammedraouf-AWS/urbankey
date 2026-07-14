@@ -7,6 +7,7 @@ import { PropertyGallery } from "@/features/properties/components/PropertyGaller
 import { PropertyAmenities } from "@/features/properties/components/PropertyAmenities"
 import { AgentCard } from "@/features/properties/components/AgentCard"
 import { FavoriteButton } from "@/features/properties/components/FavoriteButton"
+import { RecentlyViewedTracker } from "@/features/properties/components/RecentlyViewedTracker"
 import { formatPrice, formatArea, absoluteUrl, cn } from "@/lib/utils"
 import { siteConfig } from "@/config/site"
 
@@ -95,6 +96,7 @@ export default async function PropertyDetailPage({ params }: PageProps) {
       />
 
       <main className="min-h-screen bg-background">
+        <RecentlyViewedTracker propertyId={property.id} />
         <PropertyGallery images={property.images} title={property.title} />
 
         <div className="container mx-auto px-4 py-10">
