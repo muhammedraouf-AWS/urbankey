@@ -1,26 +1,14 @@
 import type { Metadata } from "next"
-import dynamic from "next/dynamic"
 import { fetchProperties, fetchPropertiesForMap } from "@/features/properties/services"
 import { PropertyGrid } from "@/features/properties/components/PropertyGrid"
-import { PropertyGridSkeleton } from "@/features/properties/components/PropertySkeleton"
 import { FilterPanel } from "@/features/properties/components/FilterPanel"
 import { ActiveFilters } from "@/features/properties/components/ActiveFilters"
 import { SortSelect } from "@/features/properties/components/SortSelect"
 import { ViewToggle } from "@/features/properties/components/ViewToggle"
+import { MapViewLoader } from "@/features/properties/components/MapViewLoader"
 import { Pagination } from "@/components/shared/Pagination"
 import type { ListingType, PropertyType } from "@/types/property"
 import type { SortOrder } from "@/types/common"
-
-// MapView uses browser-only Mapbox GL JS — disable SSR
-const MapView = dynamic(
-  () => import("@/features/properties/components/MapView").then((m) => ({ default: m.MapView })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-[600px] w-full animate-pulse rounded-xl bg-muted" />
-    ),
-  }
-)
 
 export const metadata: Metadata = {
   title: "Properties",
@@ -150,7 +138,7 @@ export default async function PropertiesPage({ searchParams }: PropertiesPagePro
 
             {/* Map or List */}
             {view === "map" ? (
-              <MapView properties={mapProperties} />
+              <MapViewLoader properties={mapProperties} />
             ) : (
               <>
                 <PropertyGrid properties={properties} />

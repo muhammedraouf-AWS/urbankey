@@ -51,7 +51,7 @@ export async function fetchPropertiesForMap(
   const response = await apiClient.get<PaginatedResponse<Property>>(
     endpoints.properties.list,
     {
-      params: toWPParams({ ...filters, page: 1, perPage: 100 }),
+      params: toWPParams({ ...filters, page: 1, perPage: 50 }),
       revalidate: 3600,
       tags: ["properties"],
     }
