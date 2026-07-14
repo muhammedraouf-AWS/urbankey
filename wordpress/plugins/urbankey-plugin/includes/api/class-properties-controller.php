@@ -38,6 +38,15 @@ class UrbanKey_Properties_Controller extends WP_REST_Controller {
             'tax_query'      => [],
         ];
 
+        $ids_param = $request->get_param( 'ids' );
+        if ( $ids_param ) {
+            $ids = array_values( array_filter( array_map( 'intval', explode( ',', $ids_param ) ) ) );
+            if ( ! empty( $ids ) ) {
+                $args['post__in'] = $ids;
+                $args['orderby']  = 'post__in';
+            }
+        }
+
         $search = $request->get_param( 'search' );
         if ( $search ) {
             $args['s'] = sanitize_text_field( $search );
@@ -319,6 +328,7 @@ class UrbanKey_Properties_Controller extends WP_REST_Controller {
             'max_area'     => [ 'type' => 'number' ],
             'city'         => [ 'type' => 'string' ],
             'amenities'    => [ 'type' => 'string' ],
+            'ids'          => [ 'type' => 'string', 'description' => 'Comma-separated property IDs (post__in)' ],
             'featured'     => [ 'type' => 'boolean' ],
             'orderby'      => [ 'type' => 'string', 'enum' => [ 'date', 'price', 'area' ], 'default' => 'date' ],
             'order'        => [ 'type' => 'string', 'enum' => [ 'asc', 'desc' ], 'default' => 'desc' ],

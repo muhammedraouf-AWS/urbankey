@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { SearchBar } from "@/features/search/components/SearchBar"
+import { FavoritesLink } from "./FavoritesLink"
 
 export function Header() {
   return (
@@ -31,6 +32,7 @@ export function Header() {
           >
             Rent
           </Link>
+          <FavoritesLink />
           <SearchBar />
         </nav>
       </div>

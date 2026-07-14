@@ -3,6 +3,8 @@
 import { useQuery } from "@tanstack/react-query"
 import { apiClient } from "@/lib/api/client"
 import { endpoints } from "@/config/api"
+import { fetchPropertiesByIds } from "@/features/properties/services"
+import { useFavoritesStore } from "@/stores/favorites.store"
 import type { Property, PropertyFilters } from "@/types/property"
 import type { PaginatedResponse } from "@/types/common"
 
@@ -21,5 +23,16 @@ export function useProperty(slug: string) {
     queryKey: ["property", slug],
     queryFn: () => apiClient.get<Property>(endpoints.properties.single(slug)),
     enabled: !!slug,
+  })
+}
+
+export function useFavoriteProperties() {
+  const favoriteIds = useFavoritesStore((s) => s.favoriteIds)
+  return useQuery({
+    queryKey: ["properties", "favorites", favoriteIds],
+    queryFn: () => fetchPropertiesByIds(favoriteIds),
+    enabled: favoriteIds.length > 0,
+    staleTime: 60_000,
+    placeholderData: (prev) => prev,
   })
 }

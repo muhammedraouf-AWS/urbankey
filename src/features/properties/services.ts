@@ -45,6 +45,15 @@ export async function fetchProperty(slug: string): Promise<Property> {
   })
 }
 
+export async function fetchPropertiesByIds(ids: number[]): Promise<Property[]> {
+  if (ids.length === 0) return []
+  const response = await apiClient.get<PaginatedResponse<Property>>(
+    endpoints.properties.list,
+    { params: { ids: ids.join(","), per_page: Math.min(ids.length, 50) } }
+  )
+  return response.data
+}
+
 export async function fetchPropertiesForMap(
   filters: Omit<PropertyFilters, "page" | "perPage"> = {}
 ): Promise<Property[]> {
