@@ -3,6 +3,7 @@ import { Inter, Playfair_Display, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/shared/Providers"
 import { Header } from "@/components/layout/header/Header"
+import { AuthProvider } from "@/features/auth/components/AuthProvider"
 import { siteConfig } from "@/config/site"
 
 const inter = Inter({
@@ -65,8 +66,10 @@ export default function RootLayout({ children }: RootLayoutProps) {
     >
       <body className="min-h-full bg-background text-foreground antialiased">
         <Providers>
-          <Header />
-          {children}
+          <AuthProvider>
+            <Header />
+            {children}
+          </AuthProvider>
         </Providers>
       </body>
     </html>

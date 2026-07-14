@@ -27,9 +27,11 @@ export const endpoints = {
   },
   search: `/${base}/search`,
   auth: {
-    login: `/jwt-auth/v1/token`,
-    refresh: `/jwt-auth/v1/token/refresh`,
+    login:    `/jwt-auth/v1/token`,
+    refresh:  `/jwt-auth/v1/token/refresh`,
     validate: `/jwt-auth/v1/token/validate`,
+    register: `/${base}/register`,
+    me:       `/wp/v2/users/me`,
   },
   blog: {
     list: `/wp/v2/posts`,
