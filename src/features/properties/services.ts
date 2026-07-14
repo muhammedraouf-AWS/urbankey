@@ -45,6 +45,20 @@ export async function fetchProperty(slug: string): Promise<Property> {
   })
 }
 
+export async function fetchPropertiesForMap(
+  filters: Omit<PropertyFilters, "page" | "perPage"> = {}
+): Promise<Property[]> {
+  const response = await apiClient.get<PaginatedResponse<Property>>(
+    endpoints.properties.list,
+    {
+      params: toWPParams({ ...filters, page: 1, perPage: 100 }),
+      revalidate: 3600,
+      tags: ["properties"],
+    }
+  )
+  return response.data
+}
+
 export async function fetchFeaturedProperties(): Promise<Property[]> {
   const response = await apiClient.get<PaginatedResponse<Property>>(
     endpoints.properties.list,
