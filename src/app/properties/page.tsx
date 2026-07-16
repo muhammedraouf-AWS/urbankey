@@ -9,10 +9,29 @@ import { MapViewLoader } from "@/features/properties/components/MapViewLoader"
 import { Pagination } from "@/components/shared/Pagination"
 import type { ListingType, PropertyType } from "@/types/property"
 import type { SortOrder } from "@/types/common"
+import { siteConfig } from "@/config/site"
+import { defaultOgImages } from "@/lib/seo"
+
+const TITLE = "Properties"
+const DESCRIPTION = "Browse our curated selection of luxury properties for sale and rent."
 
 export const metadata: Metadata = {
-  title: "Properties",
-  description: "Browse our curated selection of luxury properties for sale and rent.",
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: {
+    canonical: "/properties",
+  },
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: `${siteConfig.url}/properties`,
+    images: defaultOgImages(),
+  },
+  twitter: {
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [siteConfig.ogImage],
+  },
 }
 
 interface PropertiesPageProps {

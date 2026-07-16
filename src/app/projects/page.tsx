@@ -3,10 +3,29 @@ import { fetchProjects } from "@/features/projects/services"
 import { ProjectGrid } from "@/features/projects/components/ProjectGrid"
 import { Pagination } from "@/components/shared/Pagination"
 import type { ProjectStatus } from "@/types/project"
+import { siteConfig } from "@/config/site"
+import { defaultOgImages } from "@/lib/seo"
+
+const TITLE = "Off-Plan Projects"
+const DESCRIPTION = "Explore upcoming and under-construction developments from leading real estate developers."
 
 export const metadata: Metadata = {
-  title: "Off-Plan Projects",
-  description: "Explore upcoming and under-construction developments from leading real estate developers.",
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: {
+    canonical: "/projects",
+  },
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: `${siteConfig.url}/projects`,
+    images: defaultOgImages(),
+  },
+  twitter: {
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [siteConfig.ogImage],
+  },
 }
 
 interface ProjectsPageProps {

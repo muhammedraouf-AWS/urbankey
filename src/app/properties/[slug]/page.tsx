@@ -10,6 +10,7 @@ import { FavoriteButton } from "@/features/properties/components/FavoriteButton"
 import { RecentlyViewedTracker } from "@/features/properties/components/RecentlyViewedTracker"
 import { formatPrice, formatArea, absoluteUrl, cn } from "@/lib/utils"
 import { siteConfig } from "@/config/site"
+import { breadcrumbJsonLd } from "@/lib/seo"
 
 type PageProps = { params: Promise<{ slug: string }> }
 
@@ -22,6 +23,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
       title: `${property.title} | ${siteConfig.name}`,
       description,
+      alternates: {
+        canonical: `/properties/${slug}`,
+      },
       openGraph: {
         title: property.title,
         description,
@@ -88,11 +92,21 @@ export default async function PropertyDetailPage({ params }: PageProps) {
     .filter(Boolean)
     .join(", ")
 
+  const breadcrumbs = breadcrumbJsonLd([
+    { name: "Home", url: absoluteUrl("/") },
+    { name: "Properties", url: absoluteUrl("/properties") },
+    { name: property.title, url: absoluteUrl(`/properties/${property.slug}`) },
+  ])
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
       />
 
       <main className="min-h-screen bg-background">

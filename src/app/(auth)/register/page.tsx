@@ -4,6 +4,10 @@ import { RegisterForm } from "@/features/auth/components/RegisterForm"
 export const metadata: Metadata = {
   title: "Create Account",
   description: "Create your free UrbanKey account.",
+  alternates: {
+    canonical: "/register",
+  },
+  robots: { index: false, follow: true },
 }
 
 export default function RegisterPage() {

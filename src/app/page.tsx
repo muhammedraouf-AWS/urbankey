@@ -1,8 +1,28 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { Suspense } from "react"
 import { ArrowRight } from "lucide-react"
 import { FeaturedProperties } from "@/features/properties/components/FeaturedProperties"
 import { PropertyGridSkeleton } from "@/features/properties/components/PropertySkeleton"
+import { siteConfig } from "@/config/site"
+import { defaultOgImages } from "@/lib/seo"
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: siteConfig.name,
+    description: siteConfig.description,
+    url: siteConfig.url,
+    images: defaultOgImages(),
+  },
+  twitter: {
+    title: siteConfig.name,
+    description: siteConfig.description,
+    images: [siteConfig.ogImage],
+  },
+}
 
 export default function HomePage() {
   return (

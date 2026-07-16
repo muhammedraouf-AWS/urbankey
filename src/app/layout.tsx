@@ -5,6 +5,7 @@ import { Providers } from "@/components/shared/Providers"
 import { Header } from "@/components/layout/header/Header"
 import { AuthProvider } from "@/features/auth/components/AuthProvider"
 import { siteConfig } from "@/config/site"
+import { organizationJsonLd } from "@/lib/seo"
 
 const inter = Inter({
   variable: "--font-inter",
@@ -31,6 +32,9 @@ export const metadata: Metadata = {
   },
   description: siteConfig.description,
   metadataBase: new URL(siteConfig.url),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -65,6 +69,10 @@ export default function RootLayout({ children }: RootLayoutProps) {
       className={`${inter.variable} ${playfair.variable} ${geistMono.variable} h-full`}
     >
       <body className="min-h-full bg-background text-foreground antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }}
+        />
         <Providers>
           <AuthProvider>
             <Header />

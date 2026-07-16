@@ -7,6 +7,7 @@ import { fetchProjects } from "@/features/projects/services"
 import { ProjectGrid } from "@/features/projects/components/ProjectGrid"
 import { absoluteUrl } from "@/lib/utils"
 import { siteConfig } from "@/config/site"
+import { breadcrumbJsonLd } from "@/lib/seo"
 
 type PageProps = { params: Promise<{ slug: string }> }
 
@@ -18,6 +19,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
       title: `${developer.name} | ${siteConfig.name}`,
       description,
+      alternates: {
+        canonical: `/developers/${slug}`,
+      },
       openGraph: {
         title: developer.name,
         description,
@@ -37,8 +41,18 @@ export default async function DeveloperDetailPage({ params }: PageProps) {
   const developer = await fetchDeveloper(slug).catch(() => notFound())
   const { data: projects } = await fetchProjects({ developer: slug, perPage: 12 })
 
+  const breadcrumbs = breadcrumbJsonLd([
+    { name: "Home", url: absoluteUrl("/") },
+    { name: "Developers", url: absoluteUrl("/developers") },
+    { name: developer.name, url: absoluteUrl(`/developers/${developer.slug}`) },
+  ])
+
   return (
     <main className="min-h-screen bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+      />
       <div className="border-b border-border bg-card py-12">
         <div className="container mx-auto flex flex-col items-center gap-4 px-4 text-center sm:flex-row sm:text-left">
           <div className="relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">

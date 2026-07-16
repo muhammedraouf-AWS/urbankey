@@ -9,6 +9,7 @@ import { UnitsTable } from "@/features/projects/components/UnitsTable"
 import { PaymentPlanTimeline } from "@/features/projects/components/PaymentPlanTimeline"
 import { formatPrice, absoluteUrl } from "@/lib/utils"
 import { siteConfig } from "@/config/site"
+import { breadcrumbJsonLd } from "@/lib/seo"
 
 type PageProps = { params: Promise<{ slug: string }> }
 
@@ -27,6 +28,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
       title: `${project.title} | ${siteConfig.name}`,
       description,
+      alternates: {
+        canonical: `/projects/${slug}`,
+      },
       openGraph: {
         title: project.title,
         description,
@@ -70,8 +74,18 @@ export default async function ProjectDetailPage({ params }: PageProps) {
 
   const primaryImage = project.images[0]
 
+  const breadcrumbs = breadcrumbJsonLd([
+    { name: "Home", url: absoluteUrl("/") },
+    { name: "Projects", url: absoluteUrl("/projects") },
+    { name: project.title, url: absoluteUrl(`/projects/${project.slug}`) },
+  ])
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

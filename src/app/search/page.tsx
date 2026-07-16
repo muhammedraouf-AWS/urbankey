@@ -17,6 +17,11 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
     description: query
       ? `Search results for "${query}" on ${siteConfig.name}.`
       : "Search our curated selection of luxury properties.",
+    alternates: {
+      canonical: "/search",
+    },
+    // Internal search-result pages are thin/duplicate content — keep them out of the index.
+    robots: { index: false, follow: true },
   }
 }
 

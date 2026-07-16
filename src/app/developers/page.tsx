@@ -2,10 +2,29 @@ import type { Metadata } from "next"
 import { fetchDevelopers } from "@/features/developers/services"
 import { DeveloperGrid } from "@/features/developers/components/DeveloperGrid"
 import { Pagination } from "@/components/shared/Pagination"
+import { siteConfig } from "@/config/site"
+import { defaultOgImages } from "@/lib/seo"
+
+const TITLE = "Developers"
+const DESCRIPTION = "Meet the real estate developers behind our off-plan projects."
 
 export const metadata: Metadata = {
-  title: "Developers",
-  description: "Meet the real estate developers behind our off-plan projects.",
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: {
+    canonical: "/developers",
+  },
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: `${siteConfig.url}/developers`,
+    images: defaultOgImages(),
+  },
+  twitter: {
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [siteConfig.ogImage],
+  },
 }
 
 interface DevelopersPageProps {
