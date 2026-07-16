@@ -23,7 +23,28 @@ require_once __DIR__ . '/wp-load.php';
 // Helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Returns the ID of an existing post with this exact title/post_type, or 0.
+ * Keeps this script safe to re-run without duplicating previously seeded content.
+ */
+function uk_find_existing( $title, $post_type ) {
+    $query = new WP_Query( array(
+        'post_type'      => $post_type,
+        'title'          => $title,
+        'post_status'    => 'any',
+        'posts_per_page' => 1,
+        'fields'         => 'ids',
+        'no_found_rows'  => true,
+    ) );
+    return ! empty( $query->posts ) ? (int) $query->posts[0] : 0;
+}
+
 function uk_create_property( $args ) {
+    $existing_id = uk_find_existing( $args['title'], 'property' );
+    if ( $existing_id ) {
+        return array( 'ok' => true, 'title' => $args['title'], 'id' => $existing_id, 'skipped' => true );
+    }
+
     $post_id = wp_insert_post( array(
         'post_title'   => $args['title'],
         'post_content' => $args['description'],
@@ -69,6 +90,11 @@ function uk_create_property( $args ) {
 }
 
 function uk_create_agent( $args ) {
+    $existing_id = uk_find_existing( $args['name'], 'uk_agent' );
+    if ( $existing_id ) {
+        return array( 'ok' => true, 'name' => $args['name'], 'id' => $existing_id, 'skipped' => true );
+    }
+
     $post_id = wp_insert_post( array(
         'post_title'   => $args['name'],
         'post_content' => $args['bio'] ?? '',
@@ -95,6 +121,81 @@ function uk_create_agent( $args ) {
     return array( 'ok' => true, 'name' => $args['name'], 'id' => $post_id );
 }
 
+function uk_create_developer( $args ) {
+    $existing_id = uk_find_existing( $args['name'], 'uk_developer' );
+    if ( $existing_id ) {
+        return array( 'ok' => true, 'name' => $args['name'], 'id' => $existing_id, 'skipped' => true );
+    }
+
+    $post_id = wp_insert_post( array(
+        'post_title'   => $args['name'],
+        'post_content' => $args['bio'] ?? '',
+        'post_status'  => 'publish',
+        'post_type'    => 'uk_developer',
+    ), true );
+
+    if ( is_wp_error( $post_id ) ) {
+        return array( 'ok' => false, 'name' => $args['name'], 'error' => $post_id->get_error_message() );
+    }
+
+    $meta = array(
+        '_established' => $args['established'] ?? '',
+        '_website'     => $args['website']      ?? '',
+    );
+
+    foreach ( $meta as $key => $value ) {
+        update_post_meta( $post_id, $key, $value );
+    }
+
+    return array( 'ok' => true, 'name' => $args['name'], 'id' => $post_id );
+}
+
+function uk_create_project( $args ) {
+    $existing_id = uk_find_existing( $args['title'], 'uk_project' );
+    if ( $existing_id ) {
+        return array( 'ok' => true, 'title' => $args['title'], 'id' => $existing_id, 'skipped' => true );
+    }
+
+    $post_id = wp_insert_post( array(
+        'post_title'   => $args['title'],
+        'post_content' => $args['description'],
+        'post_status'  => 'publish',
+        'post_type'    => 'uk_project',
+    ), true );
+
+    if ( is_wp_error( $post_id ) ) {
+        return array( 'ok' => false, 'title' => $args['title'], 'error' => $post_id->get_error_message() );
+    }
+
+    $meta = array(
+        '_developer_id'    => $args['developer_id']    ?? 0,
+        '_status'          => $args['status'],
+        '_completion_date' => $args['completion_date'] ?? '',
+        '_total_units'     => $args['total_units']     ?? 0,
+        '_available_units' => $args['available_units'] ?? 0,
+        '_currency'        => $args['currency']        ?? 'USD',
+        '_min_price'       => $args['min_price']       ?? 0,
+        '_max_price'       => $args['max_price']       ?? 0,
+        '_address'         => $args['address']         ?? '',
+        '_city'            => $args['city']            ?? '',
+        '_country'         => $args['country']         ?? 'USA',
+        '_latitude'        => $args['latitude']        ?? 0,
+        '_longitude'       => $args['longitude']       ?? 0,
+        '_units'           => wp_json_encode( $args['units']        ?? array() ),
+        '_payment_plan'    => wp_json_encode( $args['payment_plan'] ?? array() ),
+    );
+
+    foreach ( $meta as $key => $value ) {
+        update_post_meta( $post_id, $key, $value );
+    }
+
+    if ( ! empty( $args['amenities'] ) ) {
+        wp_set_object_terms( $post_id, $args['amenities'], 'amenity' );
+    }
+
+    return array( 'ok' => true, 'title' => $args['title'], 'id' => $post_id );
+}
+
 // ---------------------------------------------------------------------------
 // Seed: Agents
 // ---------------------------------------------------------------------------
@@ -117,6 +218,25 @@ $agents = array(
         'whatsapp'        => '+13055550202',
         'years_experience'=> 12,
         'licence_number'  => 'FL-RE-2012-001337',
+    ),
+);
+
+// ---------------------------------------------------------------------------
+// Seed: Developers
+// ---------------------------------------------------------------------------
+
+$developers = array(
+    'meridian' => array(
+        'name'        => 'Meridian Developments',
+        'bio'         => 'A leading master-planned community developer with over 15 years of experience delivering award-winning residential and mixed-use projects across the Miami metro area.',
+        'established' => 2008,
+        'website'     => 'https://meridiandevelopments.example.com',
+    ),
+    'skyline' => array(
+        'name'        => 'Skyline Holdings',
+        'bio'         => 'A boutique developer known for architecturally distinctive high-rise towers, blending contemporary design with resort-style amenities.',
+        'established' => 1998,
+        'website'     => 'https://skylineholdings.example.com',
     ),
 );
 
@@ -295,6 +415,95 @@ $properties = array(
 );
 
 // ---------------------------------------------------------------------------
+// Seed: Projects (Off-plan)
+// ---------------------------------------------------------------------------
+
+$projects = array(
+    array(
+        'title'           => 'Meridian Bay Residences',
+        'description'     => 'A landmark waterfront community of three residential towers set around a private marina and resort-style pool deck. Meridian Bay Residences offers a curated collection of one-, two-, and three-bedroom homes with floor-to-ceiling glass, expansive terraces, and direct bay views.',
+        'developer'       => 'meridian',
+        'status'          => 'upcoming',
+        'completion_date' => '2027-06',
+        'total_units'     => 240,
+        'available_units' => 180,
+        'currency'        => 'USD',
+        'min_price'       => 320000,
+        'max_price'       => 1250000,
+        'address'         => '1 Meridian Bay Boulevard',
+        'city'            => 'Miami',
+        'country'         => 'USA',
+        'latitude'        => 25.7700,
+        'longitude'       => -80.1900,
+        'amenities'       => array( 'swimming-pool', 'gym', 'concierge', 'parking', 'sea-view', 'security' ),
+        'units'           => array(
+            array( 'type' => '1 Bedroom', 'bedrooms' => 1, 'bathrooms' => 1, 'area' => 750,  'areaUnit' => 'sqft', 'priceFrom' => 320000, 'priceTo' => 420000 ),
+            array( 'type' => '2 Bedroom', 'bedrooms' => 2, 'bathrooms' => 2, 'area' => 1150, 'areaUnit' => 'sqft', 'priceFrom' => 520000, 'priceTo' => 680000 ),
+            array( 'type' => '3 Bedroom', 'bedrooms' => 3, 'bathrooms' => 3, 'area' => 1850, 'areaUnit' => 'sqft', 'priceFrom' => 820000, 'priceTo' => 1250000 ),
+        ),
+        'payment_plan'    => array(
+            array( 'label' => 'On Booking',            'percentage' => 10 ),
+            array( 'label' => '20% Construction',      'percentage' => 10 ),
+            array( 'label' => '50% Construction',      'percentage' => 15 ),
+            array( 'label' => '80% Construction',      'percentage' => 15 ),
+            array( 'label' => 'On Handover',            'percentage' => 50, 'dueDate' => '2027-06' ),
+        ),
+    ),
+    array(
+        'title'           => 'Skyline Gardens',
+        'description'     => 'A striking 45-storey tower rising above the Brickell skyline, Skyline Gardens pairs sculptural architecture with sky gardens on every fifth floor. Currently under construction with select units still available.',
+        'developer'       => 'skyline',
+        'status'          => 'under-construction',
+        'completion_date' => '2026-12',
+        'total_units'     => 150,
+        'available_units' => 40,
+        'currency'        => 'USD',
+        'min_price'       => 450000,
+        'max_price'       => 900000,
+        'address'         => '88 Skyline Gardens Way',
+        'city'            => 'Miami',
+        'country'         => 'USA',
+        'latitude'        => 25.7620,
+        'longitude'       => -80.1930,
+        'amenities'       => array( 'swimming-pool', 'gym', 'rooftop', 'concierge', 'security', 'smart-home' ),
+        'units'           => array(
+            array( 'type' => '1 Bedroom', 'bedrooms' => 1, 'bathrooms' => 1, 'area' => 680,  'areaUnit' => 'sqft', 'priceFrom' => 450000, 'priceTo' => 520000 ),
+            array( 'type' => '2 Bedroom', 'bedrooms' => 2, 'bathrooms' => 2, 'area' => 1050, 'areaUnit' => 'sqft', 'priceFrom' => 620000, 'priceTo' => 900000 ),
+        ),
+        'payment_plan'    => array(
+            array( 'label' => 'On Booking',   'percentage' => 20 ),
+            array( 'label' => 'Under Construction', 'percentage' => 30 ),
+            array( 'label' => 'On Handover',  'percentage' => 50, 'dueDate' => '2026-12' ),
+        ),
+    ),
+    array(
+        'title'           => 'Coral Vista Towers',
+        'description'     => 'A fully completed twin-tower development overlooking Coral Vista Park. Featuring resort-style amenities, a private members lounge, and panoramic city views — now nearly sold out.',
+        'developer'       => 'meridian',
+        'status'          => 'completed',
+        'completion_date' => '2025-01',
+        'total_units'     => 300,
+        'available_units' => 5,
+        'currency'        => 'USD',
+        'min_price'       => 380000,
+        'max_price'       => 1600000,
+        'address'         => '250 Coral Vista Park Drive',
+        'city'            => 'Miami',
+        'country'         => 'USA',
+        'latitude'        => 25.7490,
+        'longitude'       => -80.2580,
+        'amenities'       => array( 'swimming-pool', 'gym', 'concierge', 'parking', 'pet-friendly', 'security' ),
+        'units'           => array(
+            array( 'type' => '2 Bedroom', 'bedrooms' => 2, 'bathrooms' => 2, 'area' => 1200, 'areaUnit' => 'sqft', 'priceFrom' => 380000, 'priceTo' => 620000 ),
+            array( 'type' => 'Penthouse',  'bedrooms' => 4, 'bathrooms' => 4, 'area' => 3400, 'areaUnit' => 'sqft', 'priceFrom' => 1250000, 'priceTo' => 1600000 ),
+        ),
+        'payment_plan'    => array(
+            array( 'label' => 'Paid in Full at Handover', 'percentage' => 100, 'dueDate' => '2025-01' ),
+        ),
+    ),
+);
+
+// ---------------------------------------------------------------------------
 // Run
 // ---------------------------------------------------------------------------
 
@@ -306,6 +515,20 @@ foreach ( $agents as $agent ) {
 
 foreach ( $properties as $property ) {
     $results[] = array_merge( array( 'type' => 'Property' ), uk_create_property( $property ) );
+}
+
+$developer_ids = array();
+foreach ( $developers as $key => $developer ) {
+    $result = uk_create_developer( $developer );
+    $results[] = array_merge( array( 'type' => 'Developer' ), $result );
+    if ( $result['ok'] ) {
+        $developer_ids[ $key ] = $result['id'];
+    }
+}
+
+foreach ( $projects as $project ) {
+    $project['developer_id'] = $developer_ids[ $project['developer'] ] ?? 0;
+    $results[] = array_merge( array( 'type' => 'Project' ), uk_create_project( $project ) );
 }
 
 // ---------------------------------------------------------------------------
@@ -325,6 +548,7 @@ $failed  = array_filter( $results, fn( $r ) => ! $r['ok'] );
   h1 { font-size: 1.6rem; }
   .badge { display:inline-block; padding:2px 10px; border-radius:20px; font-size:.8rem; font-weight:600; }
   .ok  { background:#d1fae5; color:#065f46; }
+  .skip { background:#e0e7ff; color:#3730a3; }
   .err { background:#fee2e2; color:#991b1b; }
   table { width:100%; border-collapse:collapse; margin-top:20px; font-size:.9rem; }
   th { text-align:left; padding:8px 12px; background:#f3f4f6; border-bottom:2px solid #e5e7eb; }
@@ -352,7 +576,9 @@ $failed  = array_filter( $results, fn( $r ) => ! $r['ok'] );
       <td><?php echo esc_html( $r['type'] ); ?></td>
       <td><?php echo esc_html( $r['title'] ?? $r['name'] ?? '—' ); ?></td>
       <td>
-        <?php if ( $r['ok'] ) : ?>
+        <?php if ( ! empty( $r['skipped'] ) ) : ?>
+          <span class="badge skip">↷ Already exists</span>
+        <?php elseif ( $r['ok'] ) : ?>
           <span class="badge ok">✓ Created</span>
         <?php else : ?>
           <span class="badge err">✗ <?php echo esc_html( $r['error'] ); ?></span>

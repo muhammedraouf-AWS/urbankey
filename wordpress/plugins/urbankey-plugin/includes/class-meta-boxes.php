@@ -7,6 +7,8 @@ class UrbanKey_Meta_Boxes {
         add_action( 'add_meta_boxes', array( $this, 'register_meta_boxes' ) );
         add_action( 'save_post_property', array( $this, 'save_property_meta' ), 10, 2 );
         add_action( 'save_post_uk_agent', array( $this, 'save_agent_meta' ), 10, 2 );
+        add_action( 'save_post_uk_project', array( $this, 'save_project_meta' ), 10, 2 );
+        add_action( 'save_post_uk_developer', array( $this, 'save_developer_meta' ), 10, 2 );
     }
 
     public function register_meta_boxes() {
@@ -24,6 +26,24 @@ class UrbanKey_Meta_Boxes {
             'Agent Details',
             array( $this, 'render_agent_meta_box' ),
             'uk_agent',
+            'normal',
+            'high'
+        );
+
+        add_meta_box(
+            'uk_project_details',
+            'Project Details',
+            array( $this, 'render_project_meta_box' ),
+            'uk_project',
+            'normal',
+            'high'
+        );
+
+        add_meta_box(
+            'uk_developer_details',
+            'Developer Details',
+            array( $this, 'render_developer_meta_box' ),
+            'uk_developer',
             'normal',
             'high'
         );
@@ -287,6 +307,218 @@ class UrbanKey_Meta_Boxes {
 
         if ( isset( $_POST['_years_experience'] ) ) {
             update_post_meta( $post_id, '_years_experience', absint( $_POST['_years_experience'] ) );
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Project meta box
+    // ------------------------------------------------------------------
+
+    public function render_project_meta_box( $post ) {
+        wp_nonce_field( 'uk_save_project_meta', 'uk_project_nonce' );
+        $meta = get_post_meta( $post->ID );
+        $get  = function ( $key, $default = '' ) use ( $meta ) {
+            return isset( $meta[ $key ][0] ) ? $meta[ $key ][0] : $default;
+        };
+        ?>
+        <table class="uk-meta-table">
+            <tr><th colspan="2" class="uk-meta-section">Developer &amp; Status</th></tr>
+            <tr>
+                <th><label for="_developer_id">Developer</label></th>
+                <td>
+                    <?php
+                    $current_developer = (int) $get( '_developer_id', 0 );
+                    $developers = get_posts( array( 'post_type' => 'uk_developer', 'post_status' => 'publish', 'numberposts' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );
+                    ?>
+                    <select id="_developer_id" name="_developer_id">
+                        <option value="0"><?php esc_html_e( '— No Developer —', 'urbankey' ); ?></option>
+                        <?php foreach ( $developers as $developer ) : ?>
+                            <option value="<?php echo esc_attr( $developer->ID ); ?>" <?php selected( $current_developer, $developer->ID ); ?>>
+                                <?php echo esc_html( get_the_title( $developer ) ); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <th><label for="_status">Status</label></th>
+                <td>
+                    <select id="_status" name="_status">
+                        <?php foreach ( array( 'upcoming', 'under-construction', 'completed' ) as $s ) : ?>
+                            <option value="<?php echo $s; ?>" <?php selected( $get( '_status', 'upcoming' ), $s ); ?>><?php echo ucfirst( str_replace( '-', ' ', $s ) ); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <th><label for="_completion_date">Completion Date</label></th>
+                <td><input type="text" id="_completion_date" name="_completion_date" placeholder="YYYY-MM" value="<?php echo esc_attr( $get( '_completion_date' ) ); ?>"></td>
+            </tr>
+
+            <tr><th colspan="2" class="uk-meta-section">Units &amp; Pricing</th></tr>
+            <tr>
+                <th><label for="_total_units">Total Units</label></th>
+                <td><input type="number" id="_total_units" name="_total_units" value="<?php echo esc_attr( $get( '_total_units', 0 ) ); ?>" min="0"></td>
+            </tr>
+            <tr>
+                <th><label for="_available_units">Available Units</label></th>
+                <td><input type="number" id="_available_units" name="_available_units" value="<?php echo esc_attr( $get( '_available_units', 0 ) ); ?>" min="0"></td>
+            </tr>
+            <tr>
+                <th><label for="_currency">Currency</label></th>
+                <td>
+                    <select id="_currency" name="_currency">
+                        <?php foreach ( array( 'USD', 'EUR', 'GBP', 'AED', 'SAR' ) as $c ) : ?>
+                            <option value="<?php echo $c; ?>" <?php selected( $get( '_currency', 'USD' ), $c ); ?>><?php echo $c; ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <th><label for="_min_price">Min Price</label></th>
+                <td><input type="number" id="_min_price" name="_min_price" value="<?php echo esc_attr( $get( '_min_price', 0 ) ); ?>" min="0" step="1"></td>
+            </tr>
+            <tr>
+                <th><label for="_max_price">Max Price</label></th>
+                <td><input type="number" id="_max_price" name="_max_price" value="<?php echo esc_attr( $get( '_max_price', 0 ) ); ?>" min="0" step="1"></td>
+            </tr>
+
+            <tr><th colspan="2" class="uk-meta-section">Location</th></tr>
+            <tr>
+                <th><label for="_address">Address</label></th>
+                <td><input type="text" id="_address" name="_address" value="<?php echo esc_attr( $get( '_address' ) ); ?>"></td>
+            </tr>
+            <tr>
+                <th><label for="_city">City</label></th>
+                <td><input type="text" id="_city" name="_city" value="<?php echo esc_attr( $get( '_city' ) ); ?>"></td>
+            </tr>
+            <tr>
+                <th><label for="_country">Country</label></th>
+                <td><input type="text" id="_country" name="_country" value="<?php echo esc_attr( $get( '_country' ) ); ?>"></td>
+            </tr>
+            <tr>
+                <th><label for="_latitude">Latitude</label></th>
+                <td><input type="text" id="_latitude" name="_latitude" value="<?php echo esc_attr( $get( '_latitude' ) ); ?>"></td>
+            </tr>
+            <tr>
+                <th><label for="_longitude">Longitude</label></th>
+                <td><input type="text" id="_longitude" name="_longitude" value="<?php echo esc_attr( $get( '_longitude' ) ); ?>"></td>
+            </tr>
+
+            <tr><th colspan="2" class="uk-meta-section">Media</th></tr>
+            <tr>
+                <th><label for="_master_plan">Master Plan Attachment ID</label></th>
+                <td><input type="number" id="_master_plan" name="_master_plan" value="<?php echo esc_attr( $get( '_master_plan', 0 ) ); ?>" min="0"></td>
+            </tr>
+
+            <tr><th colspan="2" class="uk-meta-section">Units &amp; Payment Plan (JSON)</th></tr>
+            <tr>
+                <th><label for="_units">Units</label></th>
+                <td>
+                    <textarea id="_units" name="_units" rows="4" style="width:100%;max-width:520px;font-family:monospace;" placeholder='[{"type":"1BR","bedrooms":1,"bathrooms":1,"area":750,"areaUnit":"sqft","priceFrom":250000,"priceTo":300000}]'><?php echo esc_textarea( $get( '_units', '[]' ) ); ?></textarea>
+                </td>
+            </tr>
+            <tr>
+                <th><label for="_payment_plan">Payment Plan</label></th>
+                <td>
+                    <textarea id="_payment_plan" name="_payment_plan" rows="4" style="width:100%;max-width:520px;font-family:monospace;" placeholder='[{"label":"On Booking","percentage":10},{"label":"On Handover","percentage":90}]'><?php echo esc_textarea( $get( '_payment_plan', '[]' ) ); ?></textarea>
+                </td>
+            </tr>
+        </table>
+        <?php
+    }
+
+    public function save_project_meta( $post_id, $post ) {
+        if ( ! isset( $_POST['uk_project_nonce'] ) ) return;
+        if ( ! wp_verify_nonce( $_POST['uk_project_nonce'], 'uk_save_project_meta' ) ) return;
+        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
+        if ( ! current_user_can( 'edit_post', $post_id ) ) return;
+
+        $text_fields = array( '_completion_date', '_currency', '_address', '_city', '_country' );
+        foreach ( $text_fields as $field ) {
+            if ( isset( $_POST[ $field ] ) ) {
+                update_post_meta( $post_id, $field, sanitize_text_field( $_POST[ $field ] ) );
+            }
+        }
+
+        if ( isset( $_POST['_developer_id'] ) ) {
+            update_post_meta( $post_id, '_developer_id', absint( $_POST['_developer_id'] ) );
+        }
+
+        if ( isset( $_POST['_status'] ) && in_array( $_POST['_status'], array( 'upcoming', 'under-construction', 'completed' ), true ) ) {
+            update_post_meta( $post_id, '_status', $_POST['_status'] );
+        }
+
+        $int_fields = array( '_total_units', '_available_units', '_master_plan' );
+        foreach ( $int_fields as $field ) {
+            if ( isset( $_POST[ $field ] ) ) {
+                update_post_meta( $post_id, $field, absint( $_POST[ $field ] ) );
+            }
+        }
+
+        $number_fields = array( '_min_price', '_max_price' );
+        foreach ( $number_fields as $field ) {
+            if ( isset( $_POST[ $field ] ) ) {
+                update_post_meta( $post_id, $field, floatval( $_POST[ $field ] ) );
+            }
+        }
+
+        $float_fields = array( '_latitude', '_longitude' );
+        foreach ( $float_fields as $field ) {
+            if ( isset( $_POST[ $field ] ) ) {
+                update_post_meta( $post_id, $field, floatval( $_POST[ $field ] ) );
+            }
+        }
+
+        $json_fields = array( '_units', '_payment_plan' );
+        foreach ( $json_fields as $field ) {
+            if ( isset( $_POST[ $field ] ) ) {
+                $raw     = wp_unslash( $_POST[ $field ] );
+                $decoded = json_decode( $raw, true );
+                if ( json_last_error() === JSON_ERROR_NONE && is_array( $decoded ) ) {
+                    update_post_meta( $post_id, $field, wp_json_encode( $decoded ) );
+                }
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Developer meta box
+    // ------------------------------------------------------------------
+
+    public function render_developer_meta_box( $post ) {
+        wp_nonce_field( 'uk_save_developer_meta', 'uk_developer_nonce' );
+        $meta = get_post_meta( $post->ID );
+        $get  = function ( $key, $default = '' ) use ( $meta ) {
+            return isset( $meta[ $key ][0] ) ? $meta[ $key ][0] : $default;
+        };
+        ?>
+        <table class="uk-meta-table">
+            <tr>
+                <th><label for="_established">Established (Year)</label></th>
+                <td><input type="number" id="_established" name="_established" value="<?php echo esc_attr( $get( '_established' ) ); ?>" min="1800" max="2100"></td>
+            </tr>
+            <tr>
+                <th><label for="_website">Website</label></th>
+                <td><input type="text" id="_website" name="_website" value="<?php echo esc_attr( $get( '_website' ) ); ?>" placeholder="https://"></td>
+            </tr>
+        </table>
+        <p class="description">Use the featured image as the developer logo, and the main content editor as the bio.</p>
+        <?php
+    }
+
+    public function save_developer_meta( $post_id, $post ) {
+        if ( ! isset( $_POST['uk_developer_nonce'] ) ) return;
+        if ( ! wp_verify_nonce( $_POST['uk_developer_nonce'], 'uk_save_developer_meta' ) ) return;
+        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
+        if ( ! current_user_can( 'edit_post', $post_id ) ) return;
+
+        if ( isset( $_POST['_website'] ) ) {
+            update_post_meta( $post_id, '_website', esc_url_raw( $_POST['_website'] ) );
+        }
+
+        if ( isset( $_POST['_established'] ) ) {
+            update_post_meta( $post_id, '_established', absint( $_POST['_established'] ) );
         }
     }
 }

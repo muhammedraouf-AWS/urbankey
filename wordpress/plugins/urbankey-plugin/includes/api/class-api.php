@@ -5,6 +5,8 @@ require_once URBANKEY_PLUGIN_DIR . 'includes/api/class-properties-controller.php
 require_once URBANKEY_PLUGIN_DIR . 'includes/api/class-agents-controller.php';
 require_once URBANKEY_PLUGIN_DIR . 'includes/api/class-search-controller.php';
 require_once URBANKEY_PLUGIN_DIR . 'includes/api/class-auth-controller.php';
+require_once URBANKEY_PLUGIN_DIR . 'includes/api/class-projects-controller.php';
+require_once URBANKEY_PLUGIN_DIR . 'includes/api/class-developers-controller.php';
 
 class UrbanKey_API {
 
@@ -17,5 +19,7 @@ class UrbanKey_API {
         ( new UrbanKey_Agents_Controller() )->register_routes();
         ( new UrbanKey_Search_Controller() )->register_routes();
         ( new UrbanKey_Auth_Controller() )->register_routes();
+        ( new UrbanKey_Projects_Controller() )->register_routes();
+        ( new UrbanKey_Developers_Controller() )->register_routes();
     }
 }

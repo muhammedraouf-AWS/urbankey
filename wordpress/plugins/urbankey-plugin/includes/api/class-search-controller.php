@@ -27,7 +27,7 @@ class UrbanKey_Search_Controller extends WP_REST_Controller {
         $query_string = sanitize_text_field( $request->get_param( 'q' ) );
 
         $query = new WP_Query( [
-            'post_type'      => [ 'property', 'uk_project', 'uk_agent' ],
+            'post_type'      => [ 'property', 'uk_project', 'uk_agent', 'uk_developer' ],
             'post_status'    => 'publish',
             's'              => $query_string,
             'posts_per_page' => 10,

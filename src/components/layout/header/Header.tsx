@@ -33,6 +33,12 @@ export function Header() {
           >
             Rent
           </Link>
+          <Link
+            href="/projects"
+            className="text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Projects
+          </Link>
           <FavoritesLink />
           <SearchBar />
           <UserMenu />
