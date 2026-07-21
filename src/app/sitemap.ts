@@ -3,6 +3,7 @@ import { siteConfig } from "@/config/site"
 import { fetchProperties } from "@/features/properties/services"
 import { fetchProjects } from "@/features/projects/services"
 import { fetchDevelopers } from "@/features/developers/services"
+import { fetchPosts } from "@/features/blog/services"
 import type { PaginatedResponse } from "@/types/common"
 
 // Safety cap so a runaway WordPress dataset can't blow up the sitemap request.
@@ -32,12 +33,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteConfig.url}/properties`, changeFrequency: "daily", priority: 0.9 },
     { url: `${siteConfig.url}/projects`, changeFrequency: "weekly", priority: 0.8 },
     { url: `${siteConfig.url}/developers`, changeFrequency: "weekly", priority: 0.6 },
+    { url: `${siteConfig.url}/blog`, changeFrequency: "daily", priority: 0.8 },
   ]
 
-  const [properties, projects, developers] = await Promise.all([
+  const [properties, projects, developers, posts] = await Promise.all([
     collectAllSlugs((page) => fetchProperties({ page, perPage: PER_PAGE })),
     collectAllSlugs((page) => fetchProjects({ page, perPage: PER_PAGE })),
     collectAllSlugs((page) => fetchDevelopers({ page, perPage: PER_PAGE })),
+    collectAllSlugs((page) => fetchPosts({ page, perPage: PER_PAGE })),
   ])
 
   const propertyRoutes: MetadataRoute.Sitemap = properties.map((property) => ({
@@ -60,5 +63,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }))
 
-  return [...staticRoutes, ...propertyRoutes, ...projectRoutes, ...developerRoutes]
+  const postRoutes: MetadataRoute.Sitemap = posts.map((post) => ({
+    url: `${siteConfig.url}/blog/${post.slug}`,
+    lastModified: post.date,
+    changeFrequency: "monthly",
+    priority: 0.6,
+  }))
+
+  return [
+    ...staticRoutes,
+    ...propertyRoutes,
+    ...projectRoutes,
+    ...developerRoutes,
+    ...postRoutes,
+  ]
 }

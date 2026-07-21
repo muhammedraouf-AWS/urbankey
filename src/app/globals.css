@@ -210,3 +210,68 @@
     color: var(--accent-foreground);
   }
 }
+
+/* ── Blog post content (rendered WP HTML) ──────────────────── */
+@layer components {
+  .blog-content {
+    color: var(--foreground);
+    line-height: 1.75;
+  }
+
+  .blog-content p {
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+  }
+
+  .blog-content h2 {
+    margin-top: 2em;
+    margin-bottom: 0.75em;
+    font-family: var(--font-serif, serif);
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  .blog-content h3 {
+    margin-top: 1.75em;
+    margin-bottom: 0.5em;
+    font-family: var(--font-serif, serif);
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .blog-content a {
+    color: var(--gold-dark);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .blog-content ul,
+  .blog-content ol {
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+    padding-left: 1.5em;
+  }
+
+  .blog-content ul {
+    list-style-type: disc;
+  }
+
+  .blog-content ol {
+    list-style-type: decimal;
+  }
+
+  .blog-content img {
+    margin-top: 1.5em;
+    margin-bottom: 1.5em;
+    border-radius: var(--radius-xl);
+  }
+
+  .blog-content blockquote {
+    margin-top: 1.5em;
+    margin-bottom: 1.5em;
+    border-left: 3px solid var(--gold);
+    padding-left: 1em;
+    font-style: italic;
+    color: var(--muted-foreground);
+  }
+}

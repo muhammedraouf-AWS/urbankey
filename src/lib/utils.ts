@@ -28,6 +28,14 @@ export function slugify(text: string): string {
     .replace(/(^-|-$)/g, "")
 }
 
+export function formatDate(date: string | Date, locale = "en-US"): string {
+  return new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(new Date(date))
+}
+
 export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text
   return `${text.slice(0, maxLength).trimEnd()}…`

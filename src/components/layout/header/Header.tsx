@@ -39,6 +39,12 @@ export function Header() {
           >
             Projects
           </Link>
+          <Link
+            href="/blog"
+            className="text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Blog
+          </Link>
           <FavoritesLink />
           <SearchBar />
           <UserMenu />
