@@ -7,9 +7,10 @@ import { FavoriteButton } from "./FavoriteButton"
 
 interface PropertyCardProps {
   property: Property
+  priority?: boolean
 }
 
-export function PropertyCard({ property }: PropertyCardProps) {
+export function PropertyCard({ property, priority = false }: PropertyCardProps) {
   const primaryImage = property.images[0]
 
   return (
@@ -23,6 +24,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
+            priority={priority}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-muted">

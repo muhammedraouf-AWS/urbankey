@@ -3,9 +3,10 @@ import { PostCard } from "./PostCard"
 
 interface PostGridProps {
   posts: BlogPost[]
+  priorityCount?: number
 }
 
-export function PostGrid({ posts }: PostGridProps) {
+export function PostGrid({ posts, priorityCount = 0 }: PostGridProps) {
   if (posts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -19,8 +20,8 @@ export function PostGrid({ posts }: PostGridProps) {
 
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
+      {posts.map((post, index) => (
+        <PostCard key={post.id} post={post} priority={index < priorityCount} />
       ))}
     </div>
   )

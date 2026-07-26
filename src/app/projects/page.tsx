@@ -70,7 +70,7 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <ProjectGrid projects={projects} />
+        <ProjectGrid projects={projects} priorityCount={currentPage === 1 ? 3 : 0} />
 
         {pagination.totalPages > 1 && (
           <div className="mt-12">

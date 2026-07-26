@@ -160,7 +160,10 @@ export default async function PropertiesPage({ searchParams }: PropertiesPagePro
               <MapViewLoader properties={mapProperties} />
             ) : (
               <>
-                <PropertyGrid properties={properties} />
+                <PropertyGrid
+                  properties={properties}
+                  priorityCount={currentPage === 1 ? 3 : 0}
+                />
 
                 {pagination.totalPages > 1 && (
                   <div className="mt-12">

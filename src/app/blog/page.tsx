@@ -66,7 +66,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
           <CategoryFilter categories={categories} activeSlug={category} />
         </div>
 
-        <PostGrid posts={posts} />
+        <PostGrid posts={posts} priorityCount={currentPage === 1 ? 3 : 0} />
 
         {pagination.totalPages > 1 && (
           <div className="mt-12">

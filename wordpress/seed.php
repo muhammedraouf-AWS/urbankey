@@ -19,9 +19,106 @@ if ( ! isset( $_GET['key'] ) || ! hash_equals( SEED_KEY, $_GET['key'] ) ) {
 
 require_once __DIR__ . '/wp-load.php';
 
+// media_sideload_image() lives in wp-admin/includes and isn't loaded on the front end.
+require_once ABSPATH . 'wp-admin/includes/media.php';
+require_once ABSPATH . 'wp-admin/includes/file.php';
+require_once ABSPATH . 'wp-admin/includes/image.php';
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Derives a filename with a real image extension from a Picsum URL, e.g.
+ * https://picsum.photos/seed/urbankey-marina-1/1200/900 -> urbankey-marina-1.jpg
+ *
+ * media_sideload_image() infers the attachment's file type from basename($url),
+ * and Picsum's path ends in a plain width/height number with no extension —
+ * WordPress's file-type validation then silently rejects the upload as an
+ * unrecognized type. Falls back to a hash if the URL doesn't match the
+ * expected /seed/<name>/... shape, so this stays safe for any image URL.
+ */
+function uk_filename_from_url( $url ) {
+    $path  = (string) wp_parse_url( $url, PHP_URL_PATH );
+    $parts = array_filter( explode( '/', $path ) );
+    $name  = null;
+    foreach ( $parts as $i => $part ) {
+        if ( $part === 'seed' && isset( $parts[ $i + 1 ] ) ) {
+            $name = $parts[ $i + 1 ];
+            break;
+        }
+    }
+    if ( ! $name ) {
+        $name = md5( $url );
+    }
+    return sanitize_file_name( $name ) . '.jpg';
+}
+
+/**
+ * Downloads a remote image and attaches it to $post_id as a media library item.
+ * Returns array( 'id' => attachment ID or 0, 'error' => message or null ).
+ * Bypasses media_sideload_image() and builds the sideload array manually with
+ * an explicit filename (see uk_filename_from_url()), since the built-in
+ * function's URL-derived filename silently breaks on extension-less image URLs.
+ * Failures are non-fatal (the seeder keeps going), but the error is surfaced in
+ * the results table instead of being swallowed, since a silent 0 gives no way
+ * to tell "no images configured" apart from "every upload failed".
+ */
+function uk_sideload_image( $url, $post_id ) {
+    $tmp_file = download_url( $url );
+    if ( is_wp_error( $tmp_file ) ) {
+        return array( 'id' => 0, 'error' => $tmp_file->get_error_message() );
+    }
+
+    $file_array = array(
+        'name'     => uk_filename_from_url( $url ),
+        'tmp_name' => $tmp_file,
+    );
+
+    $attachment_id = media_handle_sideload( $file_array, $post_id );
+
+    if ( is_wp_error( $attachment_id ) ) {
+        if ( file_exists( $file_array['tmp_name'] ) ) {
+            @unlink( $file_array['tmp_name'] );
+        }
+        return array( 'id' => 0, 'error' => $attachment_id->get_error_message() );
+    }
+
+    return array( 'id' => (int) $attachment_id, 'error' => null );
+}
+
+/**
+ * Sideloads a list of image URLs. Returns the attachment IDs that succeeded
+ * plus any error messages, so a full-failure batch is visible in the report
+ * rather than silently producing an empty gallery.
+ * Only ever called for newly-inserted posts (existing posts return early via
+ * uk_find_existing), so re-running the seeder never re-downloads images.
+ */
+function uk_sideload_gallery( $urls, $post_id ) {
+    $ids    = array();
+    $errors = array();
+    foreach ( $urls as $url ) {
+        $result = uk_sideload_image( $url, $post_id );
+        if ( $result['id'] ) {
+            $ids[] = $result['id'];
+        } else {
+            $errors[] = $result['error'];
+        }
+    }
+    return array( 'ids' => $ids, 'errors' => $errors );
+}
+
+/**
+ * Builds a short "N/M uploaded" status string (plus the first error message,
+ * if any) for display in the seeder's results table.
+ */
+function uk_image_status( $uploaded, $total, $errors ) {
+    $status = "{$uploaded}/{$total} image" . ( $total === 1 ? '' : 's' ) . ' uploaded';
+    if ( ! empty( $errors ) ) {
+        $status .= ' — ' . $errors[0];
+    }
+    return $status;
+}
 
 /**
  * Returns the ID of an existing post with this exact title/post_type, or 0.
@@ -86,7 +183,16 @@ function uk_create_property( $args ) {
         wp_set_object_terms( $post_id, $args['amenities'], 'amenity' );
     }
 
-    return array( 'ok' => true, 'title' => $args['title'], 'id' => $post_id );
+    $image_status = null;
+    if ( ! empty( $args['images'] ) ) {
+        $gallery = uk_sideload_gallery( $args['images'], $post_id );
+        if ( ! empty( $gallery['ids'] ) ) {
+            update_post_meta( $post_id, '_gallery', $gallery['ids'] );
+        }
+        $image_status = uk_image_status( count( $gallery['ids'] ), count( $args['images'] ), $gallery['errors'] );
+    }
+
+    return array( 'ok' => true, 'title' => $args['title'], 'id' => $post_id, 'images' => $image_status );
 }
 
 function uk_create_agent( $args ) {
@@ -193,7 +299,25 @@ function uk_create_project( $args ) {
         wp_set_object_terms( $post_id, $args['amenities'], 'amenity' );
     }
 
-    return array( 'ok' => true, 'title' => $args['title'], 'id' => $post_id );
+    $image_status = null;
+    if ( ! empty( $args['images'] ) ) {
+        $gallery = uk_sideload_gallery( $args['images'], $post_id );
+        if ( ! empty( $gallery['ids'] ) ) {
+            update_post_meta( $post_id, '_gallery', $gallery['ids'] );
+        }
+        $image_status = uk_image_status( count( $gallery['ids'] ), count( $args['images'] ), $gallery['errors'] );
+    }
+
+    if ( ! empty( $args['master_plan'] ) ) {
+        $master_plan = uk_sideload_image( $args['master_plan'], $post_id );
+        if ( $master_plan['id'] ) {
+            update_post_meta( $post_id, '_master_plan', $master_plan['id'] );
+        } else {
+            $image_status = ( $image_status ? $image_status . '; ' : '' ) . 'master plan failed — ' . $master_plan['error'];
+        }
+    }
+
+    return array( 'ok' => true, 'title' => $args['title'], 'id' => $post_id, 'images' => $image_status );
 }
 
 // ---------------------------------------------------------------------------
@@ -219,6 +343,24 @@ $agents = array(
         'years_experience'=> 12,
         'licence_number'  => 'FL-RE-2012-001337',
     ),
+    array(
+        'name'            => 'Elena Vasquez',
+        'bio'             => 'Bilingual luxury condo specialist focused on international buyers, with deep expertise in Coral Gables and Downtown Miami new developments.',
+        'email'           => 'elena@urbankey.com',
+        'phone'           => '+1 305 555 0303',
+        'whatsapp'        => '+13055550303',
+        'years_experience'=> 6,
+        'licence_number'  => 'FL-RE-2019-007743',
+    ),
+    array(
+        'name'            => 'Marcus Chen',
+        'bio'             => 'Off-plan and new development specialist with 10 years guiding investors through pre-construction purchases across South Florida.',
+        'email'           => 'marcus@urbankey.com',
+        'phone'           => '+1 305 555 0404',
+        'whatsapp'        => '+13055550404',
+        'years_experience'=> 10,
+        'licence_number'  => 'FL-RE-2015-003298',
+    ),
 );
 
 // ---------------------------------------------------------------------------
@@ -237,6 +379,18 @@ $developers = array(
         'bio'         => 'A boutique developer known for architecturally distinctive high-rise towers, blending contemporary design with resort-style amenities.',
         'established' => 1998,
         'website'     => 'https://skylineholdings.example.com',
+    ),
+    'oceanview' => array(
+        'name'        => 'Oceanview Capital',
+        'bio'         => 'A waterfront-focused developer delivering boutique low-rise and mid-rise communities across South Florida\'s barrier islands since the mid-2000s.',
+        'established' => 2005,
+        'website'     => 'https://oceanviewcapital.example.com',
+    ),
+    'vantage' => array(
+        'name'        => 'Vantage Urban Partners',
+        'bio'         => 'An urban infill developer specialising in mixed-use, transit-oriented residential towers in Miami\'s core neighbourhoods.',
+        'established' => 2014,
+        'website'     => 'https://vantageurbanpartners.example.com',
     ),
 );
 
@@ -267,7 +421,18 @@ function uk_create_blog_post( $args ) {
         wp_set_post_tags( $post_id, $args['tags'] );
     }
 
-    return array( 'ok' => true, 'title' => $args['title'], 'id' => $post_id );
+    $image_status = null;
+    if ( ! empty( $args['image'] ) ) {
+        $image = uk_sideload_image( $args['image'], $post_id );
+        if ( $image['id'] ) {
+            set_post_thumbnail( $post_id, $image['id'] );
+            $image_status = '1/1 image uploaded';
+        } else {
+            $image_status = '0/1 images uploaded — ' . $image['error'];
+        }
+    }
+
+    return array( 'ok' => true, 'title' => $args['title'], 'id' => $post_id, 'images' => $image_status );
 }
 
 /**
@@ -334,6 +499,11 @@ $properties = array(
         'latitude'      => 25.7780,
         'longitude'     => -80.1855,
         'amenities'     => array( 'swimming-pool', 'gym', 'concierge', 'parking', 'sea-view', 'smart-home', 'rooftop', 'security' ),
+        'images'        => array(
+            'https://picsum.photos/seed/urbankey-marina-1/1200/900',
+            'https://picsum.photos/seed/urbankey-marina-2/1200/900',
+            'https://picsum.photos/seed/urbankey-marina-3/1200/900',
+        ),
     ),
     array(
         'title'         => 'Palm Hills Estate Villa',
@@ -358,6 +528,11 @@ $properties = array(
         'latitude'      => 25.6722,
         'longitude'     => -80.3127,
         'amenities'     => array( 'swimming-pool', 'gym', 'parking', 'pet-friendly', 'smart-home', 'security' ),
+        'images'        => array(
+            'https://picsum.photos/seed/urbankey-palmhills-1/1200/900',
+            'https://picsum.photos/seed/urbankey-palmhills-2/1200/900',
+            'https://picsum.photos/seed/urbankey-palmhills-3/1200/900',
+        ),
     ),
     array(
         'title'         => 'Coral Gardens Townhouse',
@@ -382,6 +557,10 @@ $properties = array(
         'latitude'      => 25.7070,
         'longitude'     => -80.2845,
         'amenities'     => array( 'swimming-pool', 'parking', 'pet-friendly', 'security' ),
+        'images'        => array(
+            'https://picsum.photos/seed/urbankey-coralgardens-1/1200/900',
+            'https://picsum.photos/seed/urbankey-coralgardens-2/1200/900',
+        ),
     ),
     array(
         'title'         => 'Brickell City Apartment',
@@ -406,6 +585,10 @@ $properties = array(
         'latitude'      => 25.7588,
         'longitude'     => -80.1937,
         'amenities'     => array( 'swimming-pool', 'gym', 'concierge', 'parking', 'balcony', 'security' ),
+        'images'        => array(
+            'https://picsum.photos/seed/urbankey-brickell-1/1200/900',
+            'https://picsum.photos/seed/urbankey-brickell-2/1200/900',
+        ),
     ),
     array(
         'title'         => 'Wynwood Design Studio',
@@ -430,6 +613,9 @@ $properties = array(
         'latitude'      => 25.8009,
         'longitude'     => -80.1993,
         'amenities'     => array( 'rooftop', 'balcony' ),
+        'images'        => array(
+            'https://picsum.photos/seed/urbankey-wynwood-1/1200/900',
+        ),
     ),
     array(
         'title'         => 'Financial District Office Suite',
@@ -454,6 +640,177 @@ $properties = array(
         'latitude'      => 25.7726,
         'longitude'     => -80.1877,
         'amenities'     => array( 'parking', 'concierge', 'security' ),
+        'images'        => array(
+            'https://picsum.photos/seed/urbankey-findistrict-1/1200/900',
+            'https://picsum.photos/seed/urbankey-findistrict-2/1200/900',
+        ),
+    ),
+    array(
+        'title'         => 'Coconut Grove Garden Duplex',
+        'description'   => 'Charming two-storey duplex tucked beneath the tree canopy of historic Coconut Grove. Wraparound porches, hardwood floors, and a private garden courtyard bring a village feel rarely found this close to the bay. Fully renovated kitchen and baths while preserving the property\'s 1930s architectural character.',
+        'price'         => 1450000,
+        'currency'      => 'USD',
+        'listing_type'  => 'sale',
+        'status'        => 'available',
+        'property_type' => 'townhouse',
+        'featured'      => true,
+        'bedrooms'      => 4,
+        'bathrooms'     => 3,
+        'area'          => 2900,
+        'area_unit'     => 'sqft',
+        'floors'        => 2,
+        'year_built'    => 1934,
+        'address'       => '3410 Devon Road',
+        'city'          => 'Miami',
+        'state'         => 'Florida',
+        'country'       => 'USA',
+        'zip_code'      => '33133',
+        'latitude'      => 25.7282,
+        'longitude'     => -80.2436,
+        'amenities'     => array( 'parking', 'pet-friendly', 'balcony' ),
+        'images'        => array(
+            'https://picsum.photos/seed/urbankey-coconutgrove-1/1200/900',
+            'https://picsum.photos/seed/urbankey-coconutgrove-2/1200/900',
+        ),
+    ),
+    array(
+        'title'         => 'Key Biscayne Oceanfront Condo',
+        'description'   => 'Direct oceanfront two-bedroom residence on Key Biscayne\'s exclusive Crandon Boulevard, with unobstructed Atlantic views from a wraparound balcony. Full-service building with private beach access, tennis courts, and a renovated lobby. A rare island-living opportunity minutes from downtown Miami.',
+        'price'         => 2100000,
+        'currency'      => 'USD',
+        'listing_type'  => 'sale',
+        'status'        => 'available',
+        'property_type' => 'apartment',
+        'featured'      => true,
+        'bedrooms'      => 2,
+        'bathrooms'     => 2,
+        'area'          => 1650,
+        'area_unit'     => 'sqft',
+        'floors'        => 12,
+        'year_built'    => 1998,
+        'address'       => '785 Crandon Boulevard, Unit 1204',
+        'city'          => 'Key Biscayne',
+        'state'         => 'Florida',
+        'country'       => 'USA',
+        'zip_code'      => '33149',
+        'latitude'      => 25.6910,
+        'longitude'     => -80.1626,
+        'amenities'     => array( 'swimming-pool', 'gym', 'concierge', 'parking', 'sea-view', 'security' ),
+        'images'        => array(
+            'https://picsum.photos/seed/urbankey-keybiscayne-1/1200/900',
+            'https://picsum.photos/seed/urbankey-keybiscayne-2/1200/900',
+            'https://picsum.photos/seed/urbankey-keybiscayne-3/1200/900',
+        ),
+    ),
+    array(
+        'title'         => 'Coral Gables Mediterranean Estate',
+        'description'   => 'A grand Mediterranean Revival estate on a double lot in the heart of Coral Gables\' historic core. Arched loggias, hand-painted tile work, and a barrel-tile roof frame formal gardens and a resort-style pool. A rare blend of old-world craftsmanship and modern systems throughout.',
+        'price'         => 4200000,
+        'currency'      => 'USD',
+        'listing_type'  => 'sale',
+        'status'        => 'available',
+        'property_type' => 'villa',
+        'featured'      => true,
+        'bedrooms'      => 6,
+        'bathrooms'     => 5,
+        'area'          => 7400,
+        'area_unit'     => 'sqft',
+        'floors'        => 2,
+        'year_built'    => 1928,
+        'address'       => '1120 Coral Way',
+        'city'          => 'Coral Gables',
+        'state'         => 'Florida',
+        'country'       => 'USA',
+        'zip_code'      => '33134',
+        'latitude'      => 25.7215,
+        'longitude'     => -80.2684,
+        'amenities'     => array( 'swimming-pool', 'parking', 'security', 'smart-home' ),
+        'images'        => array(
+            'https://picsum.photos/seed/urbankey-coralgables-1/1200/900',
+            'https://picsum.photos/seed/urbankey-coralgables-2/1200/900',
+        ),
+    ),
+    array(
+        'title'         => 'South Beach Art Deco Loft',
+        'description'   => 'Sun-drenched one-bedroom loft in a meticulously restored Art Deco building steps from Ocean Drive. Soaring ceilings, terrazzo floors, and oversized steel-frame windows preserve the building\'s 1936 character alongside a fully modernised kitchen and bath. Walk to the beach, dining, and nightlife.',
+        'price'         => 3200,
+        'currency'      => 'USD',
+        'listing_type'  => 'rent',
+        'status'        => 'available',
+        'property_type' => 'apartment',
+        'featured'      => false,
+        'bedrooms'      => 1,
+        'bathrooms'     => 1,
+        'area'          => 780,
+        'area_unit'     => 'sqft',
+        'floors'        => 3,
+        'year_built'    => 1936,
+        'address'       => '940 Collins Avenue, Unit 3B',
+        'city'          => 'Miami Beach',
+        'state'         => 'Florida',
+        'country'       => 'USA',
+        'zip_code'      => '33139',
+        'latitude'      => 25.7826,
+        'longitude'     => -80.1341,
+        'amenities'     => array( 'balcony', 'pet-friendly' ),
+        'images'        => array(
+            'https://picsum.photos/seed/urbankey-southbeach-1/1200/900',
+        ),
+    ),
+    array(
+        'title'         => 'Aventura Skyline Residence',
+        'description'   => 'Bright and spacious three-bedroom residence in a full-amenity Aventura tower, moments from Aventura Mall and the Waterways. Split-bedroom floor plan, updated kitchen, and a covered balcony overlooking the golf course. Building offers a resort-style pool deck, spa, and 24-hour valet.',
+        'price'         => 5200,
+        'currency'      => 'USD',
+        'listing_type'  => 'rent',
+        'status'        => 'available',
+        'property_type' => 'apartment',
+        'featured'      => false,
+        'bedrooms'      => 3,
+        'bathrooms'     => 2,
+        'area'          => 1950,
+        'area_unit'     => 'sqft',
+        'floors'        => 18,
+        'year_built'    => 2015,
+        'address'       => '3535 NE 207th Street, Unit 1802',
+        'city'          => 'Aventura',
+        'state'         => 'Florida',
+        'country'       => 'USA',
+        'zip_code'      => '33180',
+        'latitude'      => 25.9565,
+        'longitude'     => -80.1425,
+        'amenities'     => array( 'swimming-pool', 'gym', 'concierge', 'parking', 'security' ),
+        'images'        => array(
+            'https://picsum.photos/seed/urbankey-aventura-1/1200/900',
+            'https://picsum.photos/seed/urbankey-aventura-2/1200/900',
+        ),
+    ),
+    array(
+        'title'         => 'Downtown Miami Micro-Unit',
+        'description'   => 'Efficient, design-forward studio in a new Downtown Miami tower built around compact urban living. Floor-to-ceiling windows, a fold-away Murphy bed, and space-saving custom millwork maximise every square foot. Steps from Brightline, the Metromover, and the Downtown dining scene.',
+        'price'         => 1900,
+        'currency'      => 'USD',
+        'listing_type'  => 'rent',
+        'status'        => 'available',
+        'property_type' => 'studio',
+        'featured'      => false,
+        'bedrooms'      => 0,
+        'bathrooms'     => 1,
+        'area'          => 420,
+        'area_unit'     => 'sqft',
+        'floors'        => 22,
+        'year_built'    => 2023,
+        'address'       => '90 SW 3rd Street, Unit 2205',
+        'city'          => 'Miami',
+        'state'         => 'Florida',
+        'country'       => 'USA',
+        'zip_code'      => '33130',
+        'latitude'      => 25.7743,
+        'longitude'     => -80.1937,
+        'amenities'     => array( 'gym', 'concierge', 'rooftop', 'security' ),
+        'images'        => array(
+            'https://picsum.photos/seed/urbankey-downtown-1/1200/900',
+        ),
     ),
 );
 
@@ -491,6 +848,12 @@ $projects = array(
             array( 'label' => '80% Construction',      'percentage' => 15 ),
             array( 'label' => 'On Handover',            'percentage' => 50, 'dueDate' => '2027-06' ),
         ),
+        'images'          => array(
+            'https://picsum.photos/seed/urbankey-meridianbay-1/1200/900',
+            'https://picsum.photos/seed/urbankey-meridianbay-2/1200/900',
+            'https://picsum.photos/seed/urbankey-meridianbay-3/1200/900',
+        ),
+        'master_plan'     => 'https://picsum.photos/seed/urbankey-meridianbay-masterplan/1600/900',
     ),
     array(
         'title'           => 'Skyline Gardens',
@@ -518,6 +881,11 @@ $projects = array(
             array( 'label' => 'Under Construction', 'percentage' => 30 ),
             array( 'label' => 'On Handover',  'percentage' => 50, 'dueDate' => '2026-12' ),
         ),
+        'images'          => array(
+            'https://picsum.photos/seed/urbankey-skylinegardens-1/1200/900',
+            'https://picsum.photos/seed/urbankey-skylinegardens-2/1200/900',
+        ),
+        'master_plan'     => 'https://picsum.photos/seed/urbankey-skylinegardens-masterplan/1600/900',
     ),
     array(
         'title'           => 'Coral Vista Towers',
@@ -543,6 +911,110 @@ $projects = array(
         'payment_plan'    => array(
             array( 'label' => 'Paid in Full at Handover', 'percentage' => 100, 'dueDate' => '2025-01' ),
         ),
+        'images'          => array(
+            'https://picsum.photos/seed/urbankey-coralvista-1/1200/900',
+            'https://picsum.photos/seed/urbankey-coralvista-2/1200/900',
+        ),
+        'master_plan'     => 'https://picsum.photos/seed/urbankey-coralvista-masterplan/1600/900',
+    ),
+    array(
+        'title'           => 'Harbour Point Villas',
+        'description'     => 'A gated enclave of 18 detached waterfront villas on a private harbour in Key Biscayne. Each home includes a private dock, rooftop pool, and direct bay access — a rare low-density alternative to high-rise island living.',
+        'developer'       => 'oceanview',
+        'status'          => 'upcoming',
+        'completion_date' => '2028-03',
+        'total_units'     => 18,
+        'available_units' => 18,
+        'currency'        => 'USD',
+        'min_price'       => 2100000,
+        'max_price'       => 3800000,
+        'address'         => '15 Harbour Point Lane',
+        'city'            => 'Key Biscayne',
+        'country'         => 'USA',
+        'latitude'        => 25.6935,
+        'longitude'       => -80.1685,
+        'amenities'       => array( 'swimming-pool', 'sea-view', 'security', 'smart-home', 'parking' ),
+        'units'           => array(
+            array( 'type' => '4 Bedroom Villa', 'bedrooms' => 4, 'bathrooms' => 4, 'area' => 3800, 'areaUnit' => 'sqft', 'priceFrom' => 2100000, 'priceTo' => 2900000 ),
+            array( 'type' => '5 Bedroom Villa', 'bedrooms' => 5, 'bathrooms' => 5, 'area' => 4600, 'areaUnit' => 'sqft', 'priceFrom' => 3100000, 'priceTo' => 3800000 ),
+        ),
+        'payment_plan'    => array(
+            array( 'label' => 'On Booking',       'percentage' => 15 ),
+            array( 'label' => '50% Construction', 'percentage' => 25 ),
+            array( 'label' => '100% Construction','percentage' => 20 ),
+            array( 'label' => 'On Handover',      'percentage' => 40, 'dueDate' => '2028-03' ),
+        ),
+        'images'          => array(
+            'https://picsum.photos/seed/urbankey-harbourpoint-1/1200/900',
+            'https://picsum.photos/seed/urbankey-harbourpoint-2/1200/900',
+        ),
+        'master_plan'     => 'https://picsum.photos/seed/urbankey-harbourpoint-masterplan/1600/900',
+    ),
+    array(
+        'title'           => 'Midtown Junction Tower',
+        'description'     => 'A 38-storey transit-oriented tower above Midtown Miami\'s retail district, pairing studio-to-two-bedroom residences with ground-floor shops and direct Metromover access. Designed for buyers who want urban walkability without giving up resort-style amenities.',
+        'developer'       => 'vantage',
+        'status'          => 'under-construction',
+        'completion_date' => '2027-09',
+        'total_units'     => 320,
+        'available_units' => 210,
+        'currency'        => 'USD',
+        'min_price'       => 340000,
+        'max_price'       => 780000,
+        'address'         => '3201 NE 1st Avenue',
+        'city'            => 'Miami',
+        'country'         => 'USA',
+        'latitude'        => 25.8090,
+        'longitude'       => -80.1930,
+        'amenities'       => array( 'swimming-pool', 'gym', 'rooftop', 'concierge', 'security' ),
+        'units'           => array(
+            array( 'type' => 'Studio',    'bedrooms' => 0, 'bathrooms' => 1, 'area' => 520,  'areaUnit' => 'sqft', 'priceFrom' => 340000, 'priceTo' => 400000 ),
+            array( 'type' => '1 Bedroom', 'bedrooms' => 1, 'bathrooms' => 1, 'area' => 780,  'areaUnit' => 'sqft', 'priceFrom' => 460000, 'priceTo' => 560000 ),
+            array( 'type' => '2 Bedroom', 'bedrooms' => 2, 'bathrooms' => 2, 'area' => 1100, 'areaUnit' => 'sqft', 'priceFrom' => 610000, 'priceTo' => 780000 ),
+        ),
+        'payment_plan'    => array(
+            array( 'label' => 'On Booking',            'percentage' => 15 ),
+            array( 'label' => '30% Construction',       'percentage' => 15 ),
+            array( 'label' => '60% Construction',       'percentage' => 20 ),
+            array( 'label' => 'On Handover',            'percentage' => 50, 'dueDate' => '2027-09' ),
+        ),
+        'images'          => array(
+            'https://picsum.photos/seed/urbankey-midtownjunction-1/1200/900',
+            'https://picsum.photos/seed/urbankey-midtownjunction-2/1200/900',
+        ),
+        'master_plan'     => 'https://picsum.photos/seed/urbankey-midtownjunction-masterplan/1600/900',
+    ),
+    array(
+        'title'           => 'The Aventura Collection',
+        'description'     => 'A boutique 12-storey residential building steps from Aventura Mall and the Waterways, offering fully finished two- and three-bedroom homes with private elevator entry and expansive terraces overlooking the golf course.',
+        'developer'       => 'skyline',
+        'status'          => 'under-construction',
+        'completion_date' => '2027-02',
+        'total_units'     => 64,
+        'available_units' => 22,
+        'currency'        => 'USD',
+        'min_price'       => 680000,
+        'max_price'       => 1450000,
+        'address'         => '2900 NE 191st Street',
+        'city'            => 'Aventura',
+        'country'         => 'USA',
+        'latitude'        => 25.9580,
+        'longitude'       => -80.1450,
+        'amenities'       => array( 'swimming-pool', 'gym', 'concierge', 'parking', 'security', 'smart-home' ),
+        'units'           => array(
+            array( 'type' => '2 Bedroom', 'bedrooms' => 2, 'bathrooms' => 2, 'area' => 1400, 'areaUnit' => 'sqft', 'priceFrom' => 680000, 'priceTo' => 890000 ),
+            array( 'type' => '3 Bedroom', 'bedrooms' => 3, 'bathrooms' => 3, 'area' => 2000, 'areaUnit' => 'sqft', 'priceFrom' => 1050000, 'priceTo' => 1450000 ),
+        ),
+        'payment_plan'    => array(
+            array( 'label' => 'On Booking',       'percentage' => 20 ),
+            array( 'label' => 'Under Construction','percentage' => 30 ),
+            array( 'label' => 'On Handover',      'percentage' => 50, 'dueDate' => '2027-02' ),
+        ),
+        'images'          => array(
+            'https://picsum.photos/seed/urbankey-aventuracollection-1/1200/900',
+            'https://picsum.photos/seed/urbankey-aventuracollection-2/1200/900',
+        ),
+        'master_plan'     => 'https://picsum.photos/seed/urbankey-aventuracollection-masterplan/1600/900',
     ),
 );
 
@@ -558,6 +1030,7 @@ $blog_posts = array(
         'categories' => array( 'Market Trends' ),
         'tags'       => array( 'miami', 'luxury', 'market-analysis' ),
         'date'       => '2026-05-04 09:00:00',
+        'image'      => 'https://picsum.photos/seed/urbankey-blog-market-trends/1600/900',
     ),
     array(
         'title'      => 'The Complete Guide to Buying an Off-Plan Property',
@@ -566,6 +1039,7 @@ $blog_posts = array(
         'categories' => array( 'Buying Guides' ),
         'tags'       => array( 'off-plan', 'first-time-buyer', 'financing' ),
         'date'       => '2026-04-18 09:00:00',
+        'image'      => 'https://picsum.photos/seed/urbankey-blog-offplan-guide/1600/900',
     ),
     array(
         'title'      => 'Wynwood Neighbourhood Spotlight: From Warehouses to Wealth',
@@ -574,6 +1048,7 @@ $blog_posts = array(
         'categories' => array( 'Neighbourhood Spotlights' ),
         'tags'       => array( 'wynwood', 'miami', 'neighbourhood-guide' ),
         'date'       => '2026-03-22 09:00:00',
+        'image'      => 'https://picsum.photos/seed/urbankey-blog-wynwood/1600/900',
     ),
     array(
         'title'      => 'Interior Design Trends Shaping Luxury Homes in 2026',
@@ -581,6 +1056,7 @@ $blog_posts = array(
         'content'    => "<p>The stark white-on-white palette that dominated luxury new-builds for the better part of a decade is giving way to something warmer. Buyers touring finished units this year are consistently responding to natural material palettes over glossy, high-contrast finishes.</p><h2>Warm minimalism replaces stark minimalism</h2><p>Limewash walls, honed (not polished) stone, and white oak millwork are replacing the lacquered, high-gloss surfaces that defined the 2015-2020 era.</p><h2>Wellness rooms are now a standard ask</h2><p>Cold plunge pools, infrared saunas, and dedicated meditation rooms have moved from the top 1% of custom homes into standard specification sheets for new luxury towers.</p><h2>Biophilic design is being taken seriously</h2><p>Living walls, operable windows even in high-rise product, and materials chosen partly for their acoustic and air-quality properties, not just their appearance.</p><h2>Kitchens are opening up again</h2><p>After a brief trend toward closed-off scullery kitchens, open-plan layouts with a single statement island are back as the primary entertaining space.</p>",
         'categories' => array( 'Design & Lifestyle' ),
         'tags'       => array( 'interior-design', 'trends', 'luxury' ),
+        'image'      => 'https://picsum.photos/seed/urbankey-blog-interior-design/1600/900',
         'date'       => '2026-02-27 09:00:00',
     ),
     array(
@@ -590,6 +1066,7 @@ $blog_posts = array(
         'categories' => array( 'Market Trends' ),
         'tags'       => array( 'insurance', 'coastal-property', 'market-analysis' ),
         'date'       => '2026-01-30 09:00:00',
+        'image'      => 'https://picsum.photos/seed/urbankey-blog-insurance/1600/900',
     ),
     array(
         'title'      => 'A First-Time Buyer\'s Guide to Reading a Condo Association\'s Financials',
@@ -598,6 +1075,7 @@ $blog_posts = array(
         'categories' => array( 'Buying Guides' ),
         'tags'       => array( 'condo', 'first-time-buyer', 'due-diligence' ),
         'date'       => '2026-01-09 09:00:00',
+        'image'      => 'https://picsum.photos/seed/urbankey-blog-condo-financials/1600/900',
     ),
 );
 
@@ -670,7 +1148,7 @@ $failed  = array_filter( $results, fn( $r ) => ! $r['ok'] );
 
 <table>
   <thead>
-    <tr><th>Type</th><th>Name / Title</th><th>Status</th><th>Post ID</th></tr>
+    <tr><th>Type</th><th>Name / Title</th><th>Status</th><th>Post ID</th><th>Images</th></tr>
   </thead>
   <tbody>
     <?php foreach ( $results as $r ) : ?>
@@ -687,6 +1165,17 @@ $failed  = array_filter( $results, fn( $r ) => ! $r['ok'] );
         <?php endif; ?>
       </td>
       <td><?php echo isset( $r['id'] ) ? esc_html( $r['id'] ) : '—'; ?></td>
+      <td>
+        <?php if ( ! empty( $r['skipped'] ) ) : ?>
+          <span style="color:#9ca3af">— (skipped)</span>
+        <?php elseif ( empty( $r['images'] ) ) : ?>
+          <span style="color:#9ca3af">—</span>
+        <?php elseif ( strpos( $r['images'], '—' ) !== false ) : ?>
+          <span class="badge err"><?php echo esc_html( $r['images'] ); ?></span>
+        <?php else : ?>
+          <span class="badge ok"><?php echo esc_html( $r['images'] ); ?></span>
+        <?php endif; ?>
+      </td>
     </tr>
     <?php endforeach; ?>
   </tbody>

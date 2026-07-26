@@ -3,9 +3,10 @@ import { ProjectCard } from "./ProjectCard"
 
 interface ProjectGridProps {
   projects: Project[]
+  priorityCount?: number
 }
 
-export function ProjectGrid({ projects }: ProjectGridProps) {
+export function ProjectGrid({ projects, priorityCount = 0 }: ProjectGridProps) {
   if (projects.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -21,8 +22,8 @@ export function ProjectGrid({ projects }: ProjectGridProps) {
 
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {projects.map((project) => (
-        <ProjectCard key={project.id} project={project} />
+      {projects.map((project, index) => (
+        <ProjectCard key={project.id} project={project} priority={index < priorityCount} />
       ))}
     </div>
   )

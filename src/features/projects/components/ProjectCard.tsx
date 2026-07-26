@@ -6,6 +6,7 @@ import type { Project } from "@/types/project"
 
 interface ProjectCardProps {
   project: Project
+  priority?: boolean
 }
 
 const STATUS_LABEL: Record<Project["status"], string> = {
@@ -14,7 +15,7 @@ const STATUS_LABEL: Record<Project["status"], string> = {
   completed: "Completed",
 }
 
-export function ProjectCard({ project }: ProjectCardProps) {
+export function ProjectCard({ project, priority = false }: ProjectCardProps) {
   const primaryImage = project.images[0]
 
   return (
@@ -27,6 +28,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
+            priority={priority}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-muted">
