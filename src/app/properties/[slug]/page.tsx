@@ -8,6 +8,7 @@ import { PropertyAmenities } from "@/features/properties/components/PropertyAmen
 import { AgentCard } from "@/features/properties/components/AgentCard"
 import { FavoriteButton } from "@/features/properties/components/FavoriteButton"
 import { RecentlyViewedTracker } from "@/features/properties/components/RecentlyViewedTracker"
+import { MortgageCalculator } from "@/features/mortgage/components/MortgageCalculator"
 import { formatPrice, formatArea, absoluteUrl, cn } from "@/lib/utils"
 import { siteConfig } from "@/config/site"
 import { breadcrumbJsonLd } from "@/lib/seo"
@@ -208,6 +209,14 @@ export default async function PropertyDetailPage({ params }: PageProps) {
               {/* Amenities */}
               {property.amenities.length > 0 && (
                 <PropertyAmenities amenities={property.amenities} />
+              )}
+
+              {/* Mortgage calculator — doesn't apply to rentals */}
+              {property.listingType === "sale" && (
+                <div>
+                  <h2 className="mb-4 font-serif text-xl font-semibold">Mortgage Calculator</h2>
+                  <MortgageCalculator initialPrice={property.price} currency={property.currency} />
+                </div>
               )}
             </div>
 

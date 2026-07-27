@@ -34,6 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteConfig.url}/projects`, changeFrequency: "weekly", priority: 0.8 },
     { url: `${siteConfig.url}/developers`, changeFrequency: "weekly", priority: 0.6 },
     { url: `${siteConfig.url}/blog`, changeFrequency: "daily", priority: 0.8 },
+    { url: `${siteConfig.url}/mortgage-calculator`, changeFrequency: "monthly", priority: 0.4 },
   ]
 
   const [properties, projects, developers, posts] = await Promise.all([
