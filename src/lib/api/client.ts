@@ -53,7 +53,7 @@ export const apiClient = {
           ...init.headers,
         },
         next: {
-          revalidate: revalidate !== undefined ? revalidate : 60,
+          revalidate: revalidate !== undefined ? revalidate : 0,
           ...(tags ? { tags } : {}),
         },
         ...init,

@@ -33,14 +33,14 @@ export async function fetchProperties(
 ): Promise<PaginatedResponse<Property>> {
   return apiClient.get<PaginatedResponse<Property>>(endpoints.properties.list, {
     params: toWPParams(filters),
-    revalidate: 3600,
+    revalidate: 0,
     tags: ["properties"],
   })
 }
 
 export async function fetchProperty(slug: string): Promise<Property> {
   return apiClient.get<Property>(endpoints.properties.single(slug), {
-    revalidate: 3600,
+    revalidate: 0,
     tags: ["properties", `property-${slug}`],
   })
 }
@@ -61,7 +61,7 @@ export async function fetchPropertiesForMap(
     endpoints.properties.list,
     {
       params: toWPParams({ ...filters, page: 1, perPage: 50 }),
-      revalidate: 3600,
+      revalidate: 0,
       tags: ["properties"],
     }
   )
@@ -73,7 +73,7 @@ export async function fetchFeaturedProperties(): Promise<Property[]> {
     endpoints.properties.list,
     {
       params: { featured: true, per_page: 6 },
-      revalidate: 3600,
+      revalidate: 0,
       tags: ["properties"],
     }
   )

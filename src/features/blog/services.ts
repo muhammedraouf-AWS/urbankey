@@ -58,7 +58,7 @@ async function wpGet<T>(
 ): Promise<{ data: T; total: number; totalPages: number }> {
   try {
     const response = await fetch(url, {
-      next: { revalidate: options.revalidate ?? 3600, tags: options.tags ?? ["blog"] },
+      next: { revalidate: options.revalidate ?? 0, tags: options.tags ?? ["blog"] },
     })
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`)

@@ -23,14 +23,14 @@ export async function fetchProjects(
 ): Promise<PaginatedResponse<Project>> {
   return apiClient.get<PaginatedResponse<Project>>(endpoints.projects.list, {
     params: toWPParams(filters),
-    revalidate: 3600,
+    revalidate: 0,
     tags: ["projects"],
   })
 }
 
 export async function fetchProject(slug: string): Promise<Project> {
   return apiClient.get<Project>(endpoints.projects.single(slug), {
-    revalidate: 3600,
+    revalidate: 0,
     tags: ["projects", `project-${slug}`],
   })
 }

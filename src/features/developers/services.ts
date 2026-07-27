@@ -8,14 +8,14 @@ export async function fetchDevelopers(
 ): Promise<PaginatedResponse<Developer>> {
   return apiClient.get<PaginatedResponse<Developer>>(endpoints.developers.list, {
     params: { page: filters.page, per_page: filters.perPage, search: filters.search },
-    revalidate: 3600,
+    revalidate: 0,
     tags: ["developers"],
   })
 }
 
 export async function fetchDeveloper(slug: string): Promise<Developer> {
   return apiClient.get<Developer>(endpoints.developers.single(slug), {
-    revalidate: 3600,
+    revalidate: 0,
     tags: ["developers", `developer-${slug}`],
   })
 }
