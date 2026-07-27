@@ -1,3 +1,4 @@
+import { unstable_rethrow } from "next/navigation"
 import { apiConfig } from "@/config/api"
 import { parseError } from "@/lib/utils"
 
@@ -60,6 +61,7 @@ export const apiClient = {
       })
       return handleResponse<T>(response)
     } catch (error) {
+      unstable_rethrow(error)
       throw new Error(`GET ${path} failed: ${parseError(error)}`)
     }
   },
@@ -75,6 +77,7 @@ export const apiClient = {
       })
       return handleResponse<T>(response)
     } catch (error) {
+      unstable_rethrow(error)
       throw new Error(`POST ${path} failed: ${parseError(error)}`)
     }
   },
@@ -90,6 +93,7 @@ export const apiClient = {
       })
       return handleResponse<T>(response)
     } catch (error) {
+      unstable_rethrow(error)
       throw new Error(`PUT ${path} failed: ${parseError(error)}`)
     }
   },
@@ -104,6 +108,7 @@ export const apiClient = {
       })
       return handleResponse<T>(response)
     } catch (error) {
+      unstable_rethrow(error)
       throw new Error(`DELETE ${path} failed: ${parseError(error)}`)
     }
   },
