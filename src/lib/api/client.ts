@@ -42,7 +42,16 @@ export const apiClient = {
     try {
       const response = await fetch(buildUrl(path, params), {
         method: "GET",
-        headers: { "Content-Type": "application/json", ...authHeaders(token), ...init.headers },
+        headers: {
+          "Content-Type": "application/json",
+          // Hostinger's CDN caches WP REST responses per-edge for up to 7
+          // days regardless of Next.js's own revalidation — this forces
+          // every edge to revalidate with origin on each request so ISR
+          // (not the CDN) is what controls freshness.
+          "Cache-Control": "no-cache",
+          ...authHeaders(token),
+          ...init.headers,
+        },
         next: {
           revalidate: revalidate !== undefined ? revalidate : 60,
           ...(tags ? { tags } : {}),
