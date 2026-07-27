@@ -121,6 +121,20 @@ function uk_image_status( $uploaded, $total, $errors ) {
 }
 
 /**
+ * Re-reads a post straight from the posts table via $wpdb, bypassing any
+ * object cache, to prove the row actually persisted (rather than trusting
+ * wp_insert_post()'s return value, which is only the ID it attempted to use).
+ */
+function uk_verify_persisted( $post_id ) {
+    global $wpdb;
+    $row = $wpdb->get_row( $wpdb->prepare(
+        "SELECT post_type, post_status FROM {$wpdb->posts} WHERE ID = %d",
+        $post_id
+    ) );
+    return $row ? "{$row->post_type} / {$row->post_status}" : 'MISSING FROM DB';
+}
+
+/**
  * Returns the ID of an existing post with this exact title/post_type, or 0.
  * Keeps this script safe to re-run without duplicating previously seeded content.
  */
@@ -1112,6 +1126,34 @@ foreach ( $blog_posts as $blog_post ) {
 }
 
 // ---------------------------------------------------------------------------
+// Diagnostics — proves whether rows actually persisted, independent of what
+// wp_insert_post() claimed. Queries the posts table directly via $wpdb.
+// ---------------------------------------------------------------------------
+
+global $wpdb;
+
+function uk_raw_count( $post_type ) {
+    global $wpdb;
+    return (int) $wpdb->get_var( $wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status = 'publish'",
+        $post_type
+    ) );
+}
+
+$diagnostics = array(
+    'Site URL'          => get_site_url(),
+    'DB Name'           => DB_NAME,
+    'DB Host'           => DB_HOST,
+    'Table Prefix'      => $wpdb->prefix,
+    'Current User ID'   => get_current_user_id(),
+    'property (raw count, publish)'     => uk_raw_count( 'property' ),
+    'uk_agent (raw count, publish)'     => uk_raw_count( 'uk_agent' ),
+    'uk_developer (raw count, publish)' => uk_raw_count( 'uk_developer' ),
+    'uk_project (raw count, publish)'   => uk_raw_count( 'uk_project' ),
+    'post (raw count, publish)'         => uk_raw_count( 'post' ),
+);
+
+// ---------------------------------------------------------------------------
 // Output
 // ---------------------------------------------------------------------------
 
@@ -1146,9 +1188,21 @@ $failed  = array_filter( $results, fn( $r ) => ! $r['ok'] );
   <?php endif; ?>
 </p>
 
+<h2 style="font-size:1.1rem;margin-top:32px;">Diagnostics</h2>
+<table>
+  <tbody>
+    <?php foreach ( $diagnostics as $label => $value ) : ?>
+    <tr>
+      <th style="width:280px;"><?php echo esc_html( $label ); ?></th>
+      <td><?php echo esc_html( (string) $value ); ?></td>
+    </tr>
+    <?php endforeach; ?>
+  </tbody>
+</table>
+
 <table>
   <thead>
-    <tr><th>Type</th><th>Name / Title</th><th>Status</th><th>Post ID</th><th>Images</th></tr>
+    <tr><th>Type</th><th>Name / Title</th><th>Status</th><th>Post ID</th><th>Verified in DB</th><th>Images</th></tr>
   </thead>
   <tbody>
     <?php foreach ( $results as $r ) : ?>
@@ -1165,6 +1219,15 @@ $failed  = array_filter( $results, fn( $r ) => ! $r['ok'] );
         <?php endif; ?>
       </td>
       <td><?php echo isset( $r['id'] ) ? esc_html( $r['id'] ) : '—'; ?></td>
+      <td>
+        <?php if ( isset( $r['id'] ) ) :
+          $verified = uk_verify_persisted( $r['id'] );
+        ?>
+          <span class="badge <?php echo strpos( $verified, 'MISSING' ) !== false ? 'err' : 'ok'; ?>"><?php echo esc_html( $verified ); ?></span>
+        <?php else : ?>
+          <span style="color:#9ca3af">—</span>
+        <?php endif; ?>
+      </td>
       <td>
         <?php if ( ! empty( $r['skipped'] ) ) : ?>
           <span style="color:#9ca3af">— (skipped)</span>
