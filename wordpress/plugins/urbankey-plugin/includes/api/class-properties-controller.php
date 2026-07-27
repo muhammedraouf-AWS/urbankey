@@ -161,12 +161,16 @@ class UrbanKey_Properties_Controller extends WP_REST_Controller {
             }
         }
 
+        // Property type is stored as post meta (`_property_type`, set via the
+        // meta box / seeder), not the `property_type` taxonomy — no property
+        // has ever had a term assigned there, so a tax_query here always
+        // matched zero rows. Filter on the same meta key prepare_property()
+        // actually reads.
         $type = $request->get_param( 'type' );
         if ( $type ) {
-            $args['tax_query'][] = [
-                'taxonomy' => 'property_type',
-                'field'    => 'slug',
-                'terms'    => sanitize_text_field( $type ),
+            $args['meta_query'][] = [
+                'key'   => '_property_type',
+                'value' => sanitize_text_field( $type ),
             ];
         }
 
