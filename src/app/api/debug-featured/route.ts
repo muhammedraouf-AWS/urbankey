@@ -9,7 +9,10 @@ export async function GET(request: NextRequest) {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"
   const url = `${baseUrl}/wp-json/urbankey/v1/properties?featured=true&per_page=6`
 
-  const response = await fetch(url, { cache: "no-store" })
+  const response = await fetch(url, {
+    cache: "no-store",
+    headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+  })
   const text = await response.text()
 
   let parsed: unknown = null
