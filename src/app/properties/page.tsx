@@ -63,8 +63,9 @@ export default async function PropertiesPage({ searchParams }: PropertiesPagePro
     ? (sortOrderRaw as SortOrder)
     : undefined
   const view           = str(sp.view) === "map" ? "map" : "list"
+  const featured       = str(sp.featured) === "true" ? true : undefined
 
-  const sharedFilters = { listingType, type, minPrice, maxPrice, minBedrooms, sortBy, sortOrder }
+  const sharedFilters = { listingType, type, minPrice, maxPrice, minBedrooms, sortBy, sortOrder, featured }
 
   // For map view: fetch up to 100 matching properties (no pagination)
   // For list view: fetch the current page of 12
@@ -89,6 +90,7 @@ export default async function PropertiesPage({ searchParams }: PropertiesPagePro
     minBedrooms: str(sp.minBedrooms) || undefined,
     sortBy:      str(sp.sortBy)      || undefined,
     sortOrder:   str(sp.sortOrder)   || undefined,
+    featured:    featured ? "true" : undefined,
   }
 
   // All active filter params (no page) for Pagination's extraParams
@@ -107,7 +109,8 @@ export default async function PropertiesPage({ searchParams }: PropertiesPagePro
   const filterKey = `${filterParams.listingType}-${filterParams.type}-${filterParams.minPrice}-${filterParams.maxPrice}-${filterParams.minBedrooms}`
 
   const pageTitle =
-    listingType === "rent" ? "Properties for Rent"
+    featured ? "Featured Properties"
+    : listingType === "rent" ? "Properties for Rent"
     : listingType === "sale" ? "Properties for Sale"
     : "All Properties"
 
