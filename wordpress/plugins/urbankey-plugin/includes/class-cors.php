@@ -17,7 +17,12 @@ class UrbanKey_CORS {
 
         header( "Access-Control-Allow-Origin: {$origin}" );
         header( 'Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS' );
-        header( 'Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce' );
+        // Cache-Control/Pragma are sent by the frontend's API client on every
+        // request (to force the CDN to revalidate instead of serving a stale
+        // cached response) — since they aren't CORS-safelisted headers,
+        // browser-side requests (unlike server-side RSC fetches, which aren't
+        // subject to CORS at all) preflight and get blocked unless allowed here.
+        header( 'Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce, Cache-Control, Pragma' );
         header( 'Access-Control-Allow-Credentials: true' );
 
         if ( 'OPTIONS' === $_SERVER['REQUEST_METHOD'] ) {
