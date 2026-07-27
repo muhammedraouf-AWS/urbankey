@@ -4,6 +4,7 @@ import { MapPin, Bed, Bath, Square } from "lucide-react"
 import { cn, formatPrice, formatArea } from "@/lib/utils"
 import type { Property } from "@/types/property"
 import { FavoriteButton } from "./FavoriteButton"
+import { CompareButton } from "./CompareButton"
 
 interface PropertyCardProps {
   property: Property
@@ -45,9 +46,10 @@ export function PropertyCard({ property, priority = false }: PropertyCardProps) 
         </span>
       </Link>
 
-      {/* Favorite button */}
-      <div className="absolute right-3 top-3">
+      {/* Favorite + compare buttons */}
+      <div className="absolute right-3 top-3 flex flex-col gap-2">
         <FavoriteButton propertyId={property.id} />
+        <CompareButton propertyId={property.id} />
       </div>
 
       {/* Content */}

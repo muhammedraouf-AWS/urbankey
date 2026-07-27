@@ -6,6 +6,7 @@ import { endpoints } from "@/config/api"
 import { fetchPropertiesByIds } from "@/features/properties/services"
 import { useFavoritesStore } from "@/stores/favorites.store"
 import { useRecentlyViewedStore } from "@/stores/recently-viewed.store"
+import { useCompareStore } from "@/stores/compare.store"
 import type { Property, PropertyFilters } from "@/types/property"
 import type { PaginatedResponse } from "@/types/common"
 
@@ -44,6 +45,17 @@ export function useRecentlyViewedProperties() {
     queryKey: ["properties", "recently-viewed", propertyIds],
     queryFn: () => fetchPropertiesByIds(propertyIds),
     enabled: propertyIds.length > 0,
+    staleTime: 60_000,
+    placeholderData: (prev) => prev,
+  })
+}
+
+export function useCompareProperties() {
+  const compareIds = useCompareStore((s) => s.compareIds)
+  return useQuery({
+    queryKey: ["properties", "compare", compareIds],
+    queryFn: () => fetchPropertiesByIds(compareIds),
+    enabled: compareIds.length > 0,
     staleTime: 60_000,
     placeholderData: (prev) => prev,
   })

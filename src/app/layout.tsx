@@ -4,6 +4,7 @@ import "./globals.css"
 import { Providers } from "@/components/shared/Providers"
 import { Header } from "@/components/layout/header/Header"
 import { AuthProvider } from "@/features/auth/components/AuthProvider"
+import { CompareDrawer } from "@/features/properties/components/CompareDrawer"
 import { siteConfig } from "@/config/site"
 import { organizationJsonLd } from "@/lib/seo"
 
@@ -77,6 +78,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           <AuthProvider>
             <Header />
             {children}
+            <CompareDrawer />
           </AuthProvider>
         </Providers>
       </body>
