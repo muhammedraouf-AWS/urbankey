@@ -12,8 +12,11 @@ interface WpTerm {
 interface WpEmbedded {
   author?: Array<{ id: number; name: string; avatar_urls?: Record<string, string> }>
   "wp:featuredmedia"?: Array<{
-    source_url: string
-    alt_text: string
+    // Optional, not just possibly-missing-the-key: WP returns a REST error
+    // object here (e.g. `{ code: "rest_forbidden" }`) when it can't embed
+    // the attachment, so these fields may genuinely be absent at runtime.
+    source_url?: string
+    alt_text?: string
     media_details?: { width: number; height: number }
   }>
   "wp:term"?: WpTerm[][]
@@ -58,6 +61,10 @@ async function wpGet<T>(
 ): Promise<{ data: T; total: number; totalPages: number }> {
   try {
     const response = await fetch(url, {
+      // Forces Hostinger's CDN to revalidate with origin on every request
+      // rather than serving whatever it has cached — see the matching
+      // comment in lib/api/client.ts for the full story.
+      headers: { "Cache-Control": "no-cache" },
       next: { revalidate: options.revalidate ?? 0, tags: options.tags ?? ["blog"] },
     })
     if (!response.ok) {
@@ -116,7 +123,10 @@ function mapPost(post: WpPost): BlogPost {
     excerpt: stripHtml(post.excerpt.rendered),
     content: post.content.rendered,
     date: post.date,
-    featuredImage: media
+    // `media` can be a WP REST error object (e.g. `{ code: "rest_forbidden" }`)
+    // rather than actual attachment data — the embed exists but has no
+    // `source_url`, so check that specifically rather than just truthiness.
+    featuredImage: media?.source_url
       ? {
           id: 0,
           url: media.source_url,

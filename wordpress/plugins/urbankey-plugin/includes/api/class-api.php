@@ -34,9 +34,16 @@ class UrbanKey_API {
      * PoP they're routed through — the Next.js frontend already handles its
      * own revalidation via ISR/on-demand tags, so the CDN must not cache
      * these responses at all.
+     *
+     * Deliberately unscoped (originally limited to the urbankey/v1 namespace,
+     * which missed the native /wp/v2/* routes the blog feature uses — that
+     * gap let a stale cached `featured_media` reference an already-replaced
+     * attachment for up to 7 days). This entire install only exists to serve
+     * the headless frontend, so there's no REST response here that should
+     * ever be edge-cached.
      */
     public static function disable_edge_caching( $response, $server, $request ) {
-        if ( $response instanceof WP_REST_Response && 0 === strpos( $request->get_route(), '/' . URBANKEY_API_NAMESPACE ) ) {
+        if ( $response instanceof WP_REST_Response ) {
             $response->header( 'Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0' );
         }
         return $response;
