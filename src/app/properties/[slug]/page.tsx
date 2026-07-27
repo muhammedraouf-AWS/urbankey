@@ -254,6 +254,7 @@ export default async function PropertyDetailPage({ params }: PageProps) {
                 {/* Agent card */}
                 <AgentCard
                   agent={property.agent ?? null}
+                  propertyId={property.id}
                   propertyTitle={property.title}
                 />
               </div>

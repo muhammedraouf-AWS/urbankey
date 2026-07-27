@@ -7,6 +7,7 @@ require_once URBANKEY_PLUGIN_DIR . 'includes/api/class-search-controller.php';
 require_once URBANKEY_PLUGIN_DIR . 'includes/api/class-auth-controller.php';
 require_once URBANKEY_PLUGIN_DIR . 'includes/api/class-projects-controller.php';
 require_once URBANKEY_PLUGIN_DIR . 'includes/api/class-developers-controller.php';
+require_once URBANKEY_PLUGIN_DIR . 'includes/api/class-leads-controller.php';
 
 class UrbanKey_API {
 
@@ -22,6 +23,7 @@ class UrbanKey_API {
         ( new UrbanKey_Auth_Controller() )->register_routes();
         ( new UrbanKey_Projects_Controller() )->register_routes();
         ( new UrbanKey_Developers_Controller() )->register_routes();
+        ( new UrbanKey_Leads_Controller() )->register_routes();
     }
 
     /**

@@ -1,12 +1,12 @@
 import type { Metadata } from "next"
 import type { ReactNode } from "react"
-import Link from "next/link"
 import Image from "next/image"
 import { notFound } from "next/navigation"
-import { MapPin, Building2, Calendar, Home, CheckCircle2 } from "lucide-react"
+import { MapPin, Calendar, Home, CheckCircle2 } from "lucide-react"
 import { fetchProject } from "@/features/projects/services"
 import { UnitsTable } from "@/features/projects/components/UnitsTable"
 import { PaymentPlanTimeline } from "@/features/projects/components/PaymentPlanTimeline"
+import { DeveloperContactCard } from "@/features/projects/components/DeveloperContactCard"
 import { formatPrice, absoluteUrl } from "@/lib/utils"
 import { siteConfig } from "@/config/site"
 import { breadcrumbJsonLd } from "@/lib/seo"
@@ -211,44 +211,12 @@ export default async function ProjectDetailPage({ params }: PageProps) {
                   </div>
                 </div>
 
-                {/* Developer card */}
-                {project.developer ? (
-                  <Link
-                    href={`/developers/${project.developer.slug}`}
-                    className="flex items-center gap-3 rounded-2xl border border-border bg-card p-6 transition-shadow hover:shadow-lg"
-                  >
-                    <div className="relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">
-                      {project.developer.logo ? (
-                        <Image
-                          src={project.developer.logo}
-                          alt={project.developer.name}
-                          fill
-                          sizes="56px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <Building2 className="size-6 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Developed by</p>
-                      <p className="font-semibold text-foreground">{project.developer.name}</p>
-                    </div>
-                  </Link>
-                ) : (
-                  <div className="rounded-2xl border border-border bg-card p-6">
-                    <h3 className="font-serif text-lg font-semibold">Interested in this project?</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Contact our team for more information about {project.title}.
-                    </p>
-                    <a
-                      href="mailto:info@urbankey.com"
-                      className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-[var(--navy)] px-4 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                    >
-                      Request Info
-                    </a>
-                  </div>
-                )}
+                {/* Developer / contact card */}
+                <DeveloperContactCard
+                  developer={project.developer ?? null}
+                  projectId={project.id}
+                  projectTitle={project.title}
+                />
               </div>
             </div>
           </div>

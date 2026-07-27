@@ -26,6 +26,9 @@ export const endpoints = {
     single: (slug: string) => `/${base}/developers/${slug}`,
   },
   search: `/${base}/search`,
+  leads: {
+    create: `/${base}/leads`,
+  },
   auth: {
     login:    `/jwt-auth/v1/token`,
     refresh:  `/jwt-auth/v1/token/refresh`,

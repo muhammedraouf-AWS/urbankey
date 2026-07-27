@@ -22,6 +22,8 @@ require_once URBANKEY_PLUGIN_DIR . 'includes/class-taxonomies.php';
 require_once URBANKEY_PLUGIN_DIR . 'includes/class-cors.php';
 require_once URBANKEY_PLUGIN_DIR . 'includes/class-meta-boxes.php';
 require_once URBANKEY_PLUGIN_DIR . 'includes/class-webhooks.php';
+require_once URBANKEY_PLUGIN_DIR . 'includes/class-leads.php';
+require_once URBANKEY_PLUGIN_DIR . 'includes/class-admin-leads-page.php';
 require_once URBANKEY_PLUGIN_DIR . 'includes/api/class-api.php';
 
 add_action( 'plugins_loaded', function () {
@@ -30,5 +32,7 @@ add_action( 'plugins_loaded', function () {
     UrbanKey_CORS::init();
     new UrbanKey_Meta_Boxes();
     new UrbanKey_Webhooks();
+    UrbanKey_Leads::init();
+    UrbanKey_Admin_Leads_Page::init();
     UrbanKey_API::init();
 } );
