@@ -35,9 +35,19 @@ class UrbanKey_CORS {
         $origins = [
             'http://localhost:3000',
             'http://localhost:3001',
+            // Hardcoded rather than relying solely on the URBANKEY_FRONTEND_URL
+            // wp-config.php constant below — that constant wasn't actually
+            // matching this origin in production (likely unset or mismatched),
+            // which silently fell through to WordPress core's own default REST
+            // CORS handling. That handler allows the origin but doesn't know
+            // about the Cache-Control/Pragma headers this app's frontend sends,
+            // so preflight requests were failing — with no error visible here,
+            // only in the browser making the cross-origin request.
+            'https://urbankey-beta.vercel.app',
         ];
 
         // Add production domain from constant if defined (set in wp-config.php)
+        // — lets a future custom domain be added without another deploy.
         if ( defined( 'URBANKEY_FRONTEND_URL' ) && URBANKEY_FRONTEND_URL ) {
             $origins[] = URBANKEY_FRONTEND_URL;
         }
