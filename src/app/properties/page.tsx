@@ -64,8 +64,9 @@ export default async function PropertiesPage({ searchParams }: PropertiesPagePro
     : undefined
   const view           = str(sp.view) === "map" ? "map" : "list"
   const featured       = str(sp.featured) === "true" ? true : undefined
+  const city           = str(sp.city) || undefined
 
-  const sharedFilters = { listingType, type, minPrice, maxPrice, minBedrooms, sortBy, sortOrder, featured }
+  const sharedFilters = { listingType, type, minPrice, maxPrice, minBedrooms, sortBy, sortOrder, featured, city }
 
   // For map view: fetch up to 100 matching properties (no pagination)
   // For list view: fetch the current page of 12
