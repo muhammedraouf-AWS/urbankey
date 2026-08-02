@@ -60,32 +60,34 @@ export function StatsSection() {
   )
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative flex min-h-[70vh] flex-col items-center justify-center overflow-hidden bg-[var(--navy)] px-4 py-24 text-center"
-    >
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_oklch(0.30_0.08_255)_0%,_oklch(0.16_0.07_255)_70%)]" />
+    <div>
+      <section
+        ref={sectionRef}
+        className="relative flex min-h-[70vh] flex-col items-center justify-center overflow-hidden bg-[var(--navy)] px-4 py-24 text-center"
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_oklch(0.30_0.08_255)_0%,_oklch(0.16_0.07_255)_70%)]" />
 
-      <div className="relative z-10 w-full max-w-5xl">
-        <p className="mb-3 text-sm font-medium uppercase tracking-[0.35em] text-[var(--gold)]">
-          Trusted Nationwide
-        </p>
-        <h2 className="mb-14 font-serif text-3xl font-semibold text-white sm:text-4xl">
-          Numbers that speak for themselves
-        </h2>
+        <div className="relative z-10 w-full max-w-5xl">
+          <p className="mb-3 text-sm font-medium uppercase tracking-[0.35em] text-[var(--gold)]">
+            Trusted Nationwide
+          </p>
+          <h2 className="mb-14 font-serif text-3xl font-semibold text-white sm:text-4xl">
+            Numbers that speak for themselves
+          </h2>
 
-        <div className="grid grid-cols-2 gap-8 sm:gap-12 lg:grid-cols-4">
-          {stats.map((stat, i) => (
-            <div key={stat.label} data-stat-item>
-              <p className="font-serif text-4xl font-semibold text-[var(--gold)] sm:text-5xl">
-                <span ref={(el) => { valueRefs.current[i] = el }}>0</span>
-                {stat.suffix}
-              </p>
-              <p className="mt-2 text-sm text-white/70">{stat.label}</p>
-            </div>
-          ))}
+          <div className="grid grid-cols-2 gap-8 sm:gap-12 lg:grid-cols-4">
+            {stats.map((stat, i) => (
+              <div key={stat.label} data-stat-item>
+                <p className="font-serif text-4xl font-semibold text-[var(--gold)] sm:text-5xl">
+                  <span ref={(el) => { valueRefs.current[i] = el }}>0</span>
+                  {stat.suffix}
+                </p>
+                <p className="mt-2 text-sm text-white/70">{stat.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   )
 }

@@ -66,40 +66,42 @@ export function HowItWorksSection() {
   )
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative flex min-h-[80vh] flex-col items-center justify-center bg-card px-4 py-24"
-    >
-      <div className="mx-auto w-full max-w-5xl text-center">
-        <p className="mb-3 text-sm font-medium uppercase tracking-[0.35em] text-[var(--gold)]">
-          Simple Process
-        </p>
-        <h2 className="mb-16 font-serif text-3xl font-semibold text-foreground sm:text-4xl">
-          How it works
-        </h2>
+    <div>
+      <section
+        ref={sectionRef}
+        className="relative flex min-h-[80vh] flex-col items-center justify-center bg-card px-4 py-24"
+      >
+        <div className="mx-auto w-full max-w-5xl text-center">
+          <p className="mb-3 text-sm font-medium uppercase tracking-[0.35em] text-[var(--gold)]">
+            Simple Process
+          </p>
+          <h2 className="mb-16 font-serif text-3xl font-semibold text-foreground sm:text-4xl">
+            How it works
+          </h2>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {steps.map((step, i) => (
-            <div
-              key={step.title}
-              data-step-item
-              className="rounded-2xl border border-border bg-background p-8 opacity-40"
-              style={{ transform: "scale(0.96)" }}
-            >
-              <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-[var(--navy)]">
-                <step.icon className="size-5 text-[var(--gold)]" />
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {steps.map((step, i) => (
+              <div
+                key={step.title}
+                data-step-item
+                className="rounded-2xl border border-border bg-background p-8 opacity-40"
+                style={{ transform: "scale(0.96)" }}
+              >
+                <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-[var(--navy)]">
+                  <step.icon className="size-5 text-[var(--gold)]" />
+                </div>
+                <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-[var(--gold)]">
+                  Step {i + 1}
+                </p>
+                <h3 className="mt-1 font-serif text-xl font-semibold text-foreground">
+                  {step.title}
+                </h3>
+                <p className="mt-3 text-sm text-muted-foreground">{step.description}</p>
               </div>
-              <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-[var(--gold)]">
-                Step {i + 1}
-              </p>
-              <h3 className="mt-1 font-serif text-xl font-semibold text-foreground">
-                {step.title}
-              </h3>
-              <p className="mt-3 text-sm text-muted-foreground">{step.description}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   )
 }

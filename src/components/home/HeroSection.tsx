@@ -42,54 +42,56 @@ export function HeroSection() {
   )
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative flex h-screen flex-col items-center justify-center overflow-hidden px-4 text-center"
-    >
-      <div ref={imageRef} className="absolute inset-0">
-        <Image
-          src="/images/observation-urban-building-business-steel-copy_11zon.webp"
-          alt="Urban skyline of glass skyscrapers"
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
-      </div>
-      <div
-        ref={overlayRef}
-        className="absolute inset-0 bg-gradient-to-b from-[var(--navy-dark)]/80 via-[var(--navy-dark)]/68 to-[var(--navy-dark)]/88"
-      />
-
-      <div ref={textRef} className="relative z-10 max-w-4xl">
-        <p className="mb-4 text-sm font-medium uppercase tracking-[0.35em] text-[var(--gold)]">
-          Premium Real Estate
-        </p>
-        <h1 className="font-serif text-5xl font-semibold leading-tight text-white sm:text-6xl lg:text-7xl">
-          Find Your Perfect
-          <br />
-          <span className="text-[var(--gold)]">Urban Key</span>
-        </h1>
-        <p className="mx-auto mt-6 max-w-2xl text-lg text-white/70">
-          Discover luxury properties, exclusive apartments, and premium
-          investments curated for those who expect the extraordinary.
-        </p>
-
-        <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <Link
-            href="/properties"
-            className="inline-flex items-center gap-2 rounded-full bg-[var(--gold)] px-8 py-3.5 text-sm font-semibold text-[var(--navy)] transition-opacity hover:opacity-90"
-          >
-            Browse Properties <ArrowRight className="size-4" />
-          </Link>
-          <Link
-            href="/properties?listingType=rent"
-            className="inline-flex items-center gap-2 rounded-full border border-white/30 px-8 py-3.5 text-sm font-semibold text-white transition-colors hover:border-[var(--gold)] hover:text-[var(--gold)]"
-          >
-            Properties for Rent
-          </Link>
+    <div>
+      <section
+        ref={sectionRef}
+        className="relative flex h-screen flex-col items-center justify-center overflow-hidden px-4 text-center"
+      >
+        <div ref={imageRef} className="absolute inset-0">
+          <Image
+            src="/images/observation-urban-building-business-steel-copy_11zon.webp"
+            alt="Urban skyline of glass skyscrapers"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
         </div>
-      </div>
-    </section>
+        <div
+          ref={overlayRef}
+          className="absolute inset-0 bg-gradient-to-b from-[var(--navy-dark)]/80 via-[var(--navy-dark)]/68 to-[var(--navy-dark)]/88"
+        />
+
+        <div ref={textRef} className="relative z-10 max-w-4xl">
+          <p className="mb-4 text-sm font-medium uppercase tracking-[0.35em] text-[var(--gold)]">
+            Premium Real Estate
+          </p>
+          <h1 className="font-serif text-5xl font-semibold leading-tight text-white sm:text-6xl lg:text-7xl">
+            Find Your Perfect
+            <br />
+            <span className="text-[var(--gold)]">Urban Key</span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-white/70">
+            Discover luxury properties, exclusive apartments, and premium
+            investments curated for those who expect the extraordinary.
+          </p>
+
+          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Link
+              href="/properties"
+              className="inline-flex items-center gap-2 rounded-full bg-[var(--gold)] px-8 py-3.5 text-sm font-semibold text-[var(--navy)] transition-opacity hover:opacity-90"
+            >
+              Browse Properties <ArrowRight className="size-4" />
+            </Link>
+            <Link
+              href="/properties?listingType=rent"
+              className="inline-flex items-center gap-2 rounded-full border border-white/30 px-8 py-3.5 text-sm font-semibold text-white transition-colors hover:border-[var(--gold)] hover:text-[var(--gold)]"
+            >
+              Properties for Rent
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
   )
 }
